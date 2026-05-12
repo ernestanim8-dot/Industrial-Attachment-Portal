@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: attachment-portal-api
+    runtime: node
+    buildCommand: npm install && cd backend && npm install && npm run build
+    startCommand: cd backend && npm run start
+    envVars:
+      - key: NODE_VERSION
+        value: 18.0.0
+      - key: PORT
+        value: 8080
+      - key: MONGODB_URI
+        fromContext: env
+      - key: JWT_SECRET
+        fromContext: env
+      - key: CORS_ORIGIN
+        value: https://attachment-portal-mvp.vercel.app
+      - key: CLOUDINARY_CLOUD_NAME
+        fromContext: env
+      - key: CLOUDINARY_API_KEY
+        fromContext: env
+      - key: CLOUDINARY_API_SECRET
+        fromContext: env
+      - key: CLOUDINARY_UPLOAD_PRESET
+        fromContext: env
