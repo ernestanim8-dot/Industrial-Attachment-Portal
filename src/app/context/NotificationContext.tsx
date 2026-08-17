@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import axios from 'axios';
 import { Notification } from '../types';
 import { useAuth } from './AuthContext';
 
@@ -27,20 +26,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+
       const [notifsRes, countRes] = await Promise.all([
-        axios.get(`${API_URL}/notifications`, {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        axios.get(`${API_URL}/notifications/unread-count`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        fetch(`${API_URL}/notifications`, { headers: authHeader }),
+        fetch(`${API_URL}/notifications/unread-count`, { headers: authHeader })
       ]);
-      setNotifications(notifsRes.data.map((n: Record<string, unknown>) => ({
-        ...n,
-        id: (n.id || n._id || '') as string,
-        userId: (n.userId || n.recipientId || '') as string
-      })) as Notification[]);
-      setUnreadCount(countRes.data.count);
+
+      if (notifsRes.ok && countRes.ok) {
+        const notifsData = await notifsRes.json();
+        const countData = await countRes.json();
+        setNotifications(notifsData.map((n: Record<string, unknown>) => ({
+          ...n,
+          id: (n.id || n._id || '') as string,
+          userId: (n.userId || n.recipientId || '') as string
+        })) as Notification[]);
+        setUnreadCount(countData.count || 0);
+      }
     } catch (error) {
       console.error('Error fetching notifications:', error);
     } finally {
@@ -51,8 +53,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAsRead = async (id: string | number) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/notifications/${id}/read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await fetch(`${API_URL}/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
       
       setNotifications(prev => 
@@ -67,8 +73,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const markAllAsRead = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`${API_URL}/notifications/mark-all-read`, {}, {
-        headers: { Authorization: `Bearer ${token}` }
+      await fetch(`${API_URL}/notifications/mark-all-read`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
       });
       
       setNotifications(prev => prev.map(n => ({ ...n, read: true })));
