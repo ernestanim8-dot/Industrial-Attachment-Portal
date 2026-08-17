@@ -76,6 +76,7 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/vite": "4.1.12",
+    "@types/node": "^26.2.0",
     "@types/socket.io-client": "^1.4.36",
     "@vitejs/plugin-react": "4.7.0",
     "concurrently": "^9.2.1",
