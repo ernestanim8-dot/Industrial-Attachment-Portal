@@ -238,40 +238,47 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
 
       {/* Mobile backdrop */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 lg:hidden" onClick={() => setSidebarOpen(false)} />
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
       )}
 
       {/* ── Main area ── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
 
         {/* Top bar */}
-        <header className="sticky top-0 z-20 h-14 bg-white border-b border-border flex items-center px-4 sm:px-6 gap-4 shadow-sm">
-          <button title="Open sidebar" className="lg:hidden text-muted-foreground hover:text-foreground" onClick={() => setSidebarOpen(true)}>
+        <header className="sticky top-0 z-20 h-14 bg-white dark:bg-card border-b border-border flex items-center px-3 sm:px-6 gap-3 shadow-xs">
+          <button
+            title="Open sidebar"
+            className="lg:hidden p-1.5 -ml-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            onClick={() => setSidebarOpen(true)}
+          >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="min-w-0">
-            <h1 className="text-base font-bold text-foreground truncate">{title}</h1>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-sm sm:text-base font-bold text-foreground truncate">{title}</h1>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <ThemeToggle />
             <NotificationCenter />
           </div>
         </header>
 
         {/* Breadcrumb bar */}
-        <div className="bg-background border-b border-border px-4 sm:px-6 py-2 flex items-center gap-1.5 text-xs text-muted-foreground">
-          <GraduationCap className="w-3.5 h-3.5" />
-          <span>TTU Portal</span>
-          <ChevronRight className="w-3 h-3" />
-          <span className="text-foreground font-medium">{title}</span>
+        <div className="bg-background border-b border-border px-3 sm:px-6 py-2 flex items-center gap-1.5 text-xs text-muted-foreground overflow-x-auto whitespace-nowrap">
+          <GraduationCap className="w-3.5 h-3.5 shrink-0" />
+          <span className="shrink-0">TTU Portal</span>
+          <ChevronRight className="w-3 h-3 shrink-0" />
+          <span className="text-foreground font-medium truncate">{title}</span>
         </div>
 
         {/* Content */}
-        <main className="flex-1 p-4 sm:p-6 page-enter overflow-y-auto">
+        <main className="flex-1 p-3.5 sm:p-5 md:p-6 lg:p-8 page-enter overflow-y-auto overflow-x-hidden safe-bottom">
           {children}
         </main>
 
-        <footer className="border-t border-border bg-white py-2.5 px-6 text-center text-xs text-muted-foreground">
+        <footer className="border-t border-border bg-white dark:bg-card py-2.5 px-4 sm:px-6 text-center text-xs text-muted-foreground">
           © 2026 Takoradi Technical University — Industrial Attachment Assessment Portal
         </footer>
       </div>

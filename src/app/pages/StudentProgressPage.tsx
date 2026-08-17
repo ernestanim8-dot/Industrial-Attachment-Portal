@@ -9,7 +9,7 @@ import { Badge } from '../components/ui/badge';
 import {
   Activity, ArrowLeft, Building2, CheckCircle2, ChevronDown,
   ChevronUp, FileText, FolderKanban, GraduationCap,
-  Layers, Star, User, AlertCircle, Sparkles
+  Layers, Star, User, AlertCircle, Sparkles, Calendar
 } from 'lucide-react';
 import { LevelProject } from '../types';
 
@@ -120,17 +120,17 @@ export function StudentProgressPage() {
         </div>
 
         {/* Global Progress Metrics Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-gradient-to-br from-[#6374f6] to-[#4856df] text-white rounded-2xl p-5 shadow-sm flex flex-col justify-between min-h-[135px]">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-gradient-to-br from-[#6374f6] to-[#4856df] text-white rounded-2xl p-4 sm:p-5 shadow-sm flex flex-col justify-between min-h-[135px]">
             <div className="flex items-center justify-between">
-              <span className="text-white/90 text-sm font-medium">Overall Progress</span>
-              <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center">
-                <Activity className="w-4 h-4 text-white" />
+              <span className="text-white/90 text-xs sm:text-sm font-medium">Overall Progress</span>
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-white/20 flex items-center justify-center">
+                <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-white" />
               </div>
             </div>
             <div>
-              <p className="text-3xl font-bold">{studentData?.progress || 0}%</p>
-              <div className="mt-3">
+              <p className="text-2xl sm:text-3xl font-bold">{studentData?.progress || 0}%</p>
+              <div className="mt-2.5 sm:mt-3">
                 <Progress value={studentData?.progress || 0} className="h-1.5 bg-white/30 [&>*]:bg-white" />
               </div>
             </div>

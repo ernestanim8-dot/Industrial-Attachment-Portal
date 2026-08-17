@@ -341,12 +341,12 @@ export function SupervisorDashboard() {
               {isExporting ? 'Exporting…' : 'Export CSV'}
             </Button>
           </div>
-          <div className="p-5">
+          <div className="p-4 sm:p-5">
             <Tabs defaultValue="pending">
-              <TabsList className="bg-secondary mb-4 h-9">
-                <TabsTrigger value="pending" className="text-xs">Pending ({pendingReports.length})</TabsTrigger>
-                <TabsTrigger value="reviewed" className="text-xs">Reviewed ({reviewedReports.length})</TabsTrigger>
-                <TabsTrigger value="graded" className="text-xs">Graded ({gradedReports.length})</TabsTrigger>
+              <TabsList className="bg-secondary mb-4 h-auto min-h-9 p-1 rounded-xl w-full flex overflow-x-auto justify-start flex-nowrap scrollbar-none gap-1">
+                <TabsTrigger value="pending" className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0">Pending ({pendingReports.length})</TabsTrigger>
+                <TabsTrigger value="reviewed" className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0">Reviewed ({reviewedReports.length})</TabsTrigger>
+                <TabsTrigger value="graded" className="text-xs font-semibold px-3 py-1.5 rounded-lg shrink-0">Graded ({gradedReports.length})</TabsTrigger>
               </TabsList>
               <TabsContent value="pending" className="space-y-3 mt-0">
                 {pendingReports.length === 0
@@ -370,13 +370,13 @@ export function SupervisorDashboard() {
 
       {/* Grade Dialog */}
       <Dialog open={isGradingDialogOpen} onOpenChange={setIsGradingDialogOpen}>
-        <DialogContent className="max-w-xl rounded-xl">
+        <DialogContent className="w-[95vw] sm:w-full max-w-xl max-h-[90vh] overflow-y-auto rounded-xl">
           <DialogHeader>
             <DialogTitle>Grade Report: {selectedReport?.title}</DialogTitle>
             <DialogDescription>Assess student performance on multiple criteria</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmitGrade} className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               {[
                 { id: 'attendance', label: 'Attendance (0-100)', val: attendance, set: setAttendance },
                 { id: 'performance', label: 'Performance (0-100)', val: performance, set: setPerformance },

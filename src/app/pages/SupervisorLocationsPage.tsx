@@ -5,14 +5,14 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import {
   MapPin, Building2, Plus, Edit2, Trash2, Users, CheckCircle2,
-  AlertTriangle, Navigation, ArrowLeft, Clock, Search, MapPinCheck,
+  AlertTriangle, ArrowLeft, Clock, Search, MapPinCheck,
   Compass, ShieldCheck, Phone
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -156,14 +156,14 @@ export function SupervisorLocationsPage() {
 
         {/* Location Tabs: Allocation vs Daily Monitoring */}
         <Tabs defaultValue="allocation" className="space-y-6">
-          <TabsList className="bg-secondary p-1 h-11 rounded-xl">
-            <TabsTrigger value="allocation" className="gap-2 text-xs font-semibold px-4 rounded-lg">
-              <Building2 className="w-4 h-4" /> Location Allocation & Management
+          <TabsList className="bg-secondary p-1 h-auto min-h-11 rounded-xl w-full flex overflow-x-auto justify-start flex-nowrap scrollbar-none gap-1">
+            <TabsTrigger value="allocation" className="gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0">
+              <Building2 className="w-4 h-4" /> Location Allocation
             </TabsTrigger>
-            <TabsTrigger value="monitoring" className="gap-2 text-xs font-semibold px-4 rounded-lg">
-              <MapPinCheck className="w-4 h-4" /> Daily Location Monitoring ({dailyCheckIns.length})
+            <TabsTrigger value="monitoring" className="gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0">
+              <MapPinCheck className="w-4 h-4" /> Daily Monitoring ({dailyCheckIns.length})
             </TabsTrigger>
-            <TabsTrigger value="students" className="gap-2 text-xs font-semibold px-4 rounded-lg">
+            <TabsTrigger value="students" className="gap-2 text-xs font-semibold px-3.5 py-2 rounded-lg shrink-0">
               <Users className="w-4 h-4" /> Students by Location
             </TabsTrigger>
           </TabsList>

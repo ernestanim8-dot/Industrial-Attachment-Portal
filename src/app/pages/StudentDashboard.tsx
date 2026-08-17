@@ -600,7 +600,7 @@ export function StudentDashboard() {
                     }}
                     className="space-y-4 pt-2"
                   >
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="dDate">Date</Label>
                         <Input
@@ -622,7 +622,7 @@ export function StudentDashboard() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="dWeek">Week No.</Label>
                         <select
@@ -687,7 +687,7 @@ export function StudentDashboard() {
                       />
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <div className="space-y-1.5">
                         <Label htmlFor="dSkills">Skills Acquired</Label>
                         <Input
@@ -722,7 +722,7 @@ export function StudentDashboard() {
                     <Upload className="w-4 h-4" /> Upload Document
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="rounded-xl">
+                <DialogContent className="rounded-xl w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Submit Attachment Report Document</DialogTitle>
                     <DialogDescription>Upload your PDF or DOCX report archive</DialogDescription>
@@ -767,43 +767,43 @@ export function StudentDashboard() {
             const rate = Math.round((studentDailies.length / Math.max(totalExpected, 1)) * 100);
 
             return (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-5 bg-secondary/30 border-b border-border text-xs">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 p-4 sm:p-5 bg-secondary/30 border-b border-border text-xs">
                 <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium">Daily Reports Submitted</p>
-                  <p className="text-lg font-bold text-foreground mt-0.5">{studentDailies.length} Days</p>
+                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Daily Reports</p>
+                  <p className="text-base sm:text-lg font-bold text-foreground mt-0.5">{studentDailies.length} Days</p>
                 </div>
                 <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium">Total On-Site Hours</p>
-                  <p className="text-lg font-bold text-primary mt-0.5">{totalHours} Hours</p>
+                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">On-Site Hours</p>
+                  <p className="text-base sm:text-lg font-bold text-primary mt-0.5">{totalHours} Hours</p>
                 </div>
                 <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium">Missing Daily Reports</p>
-                  <p className={`text-lg font-bold mt-0.5 ${studentMiss.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Missing Reports</p>
+                  <p className={`text-base sm:text-lg font-bold mt-0.5 ${studentMiss.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
                     {studentMiss.length} {studentMiss.length === 1 ? 'Day' : 'Days'}
                   </p>
                 </div>
                 <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium">Submission Compliance</p>
-                  <p className="text-lg font-bold text-emerald-600 mt-0.5">{rate}%</p>
+                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Compliance</p>
+                  <p className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5">{rate}%</p>
                 </div>
               </div>
             );
           })()}
 
           {/* Tabbed Report Views */}
-          <div className="p-5 sm:p-6">
+          <div className="p-4 sm:p-6">
             <Tabs defaultValue="daily" className="space-y-4">
-              <TabsList className="bg-secondary p-1 h-10 rounded-xl">
-                <TabsTrigger value="daily" className="text-xs font-semibold px-3.5 rounded-lg">
+              <TabsList className="bg-secondary p-1 h-auto min-h-10 rounded-xl w-full flex overflow-x-auto justify-start flex-nowrap scrollbar-none gap-1">
+                <TabsTrigger value="daily" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
                   Daily Reports ({dailyReports.filter(d => d.studentId === (studentData?.id || user?.id)).length})
                 </TabsTrigger>
-                <TabsTrigger value="weekly" className="text-xs font-semibold px-3.5 rounded-lg">
+                <TabsTrigger value="weekly" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
                   Weekly Updates ({weeklyUpdates.filter(w => w.studentId === (studentData?.id || user?.id)).length})
                 </TabsTrigger>
-                <TabsTrigger value="monthly" className="text-xs font-semibold px-3.5 rounded-lg">
+                <TabsTrigger value="monthly" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
                   Monthly Reports ({monthlyReports.filter(m => m.studentId === (studentData?.id || user?.id)).length})
                 </TabsTrigger>
-                <TabsTrigger value="missing" className="text-xs font-semibold px-3.5 rounded-lg text-red-600 data-[state=active]:text-red-600">
+                <TabsTrigger value="missing" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0 text-red-600 data-[state=active]:text-red-600">
                   Missing ({missingDailyReports.filter(m => m.studentId === (studentData?.id || user?.id)).length})
                 </TabsTrigger>
               </TabsList>

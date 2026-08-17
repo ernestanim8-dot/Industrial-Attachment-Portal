@@ -123,14 +123,14 @@ export const Login = (): React.ReactElement => {
   // ── OTP verification screen ─────────────────────────────────────────────
   if (otpChallenge) {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-10">
-          <div className="flex flex-col items-center text-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <Smartphone className="w-8 h-8 text-primary" />
+      <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center p-3 sm:p-4">
+        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-5 sm:p-8 md:p-10">
+          <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+              <Smartphone className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground">SMS Verification</h1>
-            <p className="text-muted-foreground text-sm mt-2 leading-relaxed">
+            <h1 className="text-xl sm:text-2xl font-bold text-foreground">SMS Verification</h1>
+            <p className="text-muted-foreground text-xs sm:text-sm mt-2 leading-relaxed">
               A 6-digit code has been sent to<br />
               <span className="font-semibold text-foreground">
                 {otpChallenge.maskedPhone ?? 'your registered phone number'}
@@ -141,10 +141,10 @@ export const Login = (): React.ReactElement => {
             </p>
           </div>
 
-          <form onSubmit={handleVerifyOtp} className="space-y-6">
+          <form onSubmit={handleVerifyOtp} className="space-y-5 sm:space-y-6">
             <div>
-              <Label className="text-sm font-semibold text-center block mb-3">Enter Verification Code</Label>
-              <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
+              <Label className="text-xs sm:text-sm font-semibold text-center block mb-3">Enter Verification Code</Label>
+              <div className="flex gap-1.5 sm:gap-2 justify-center" onPaste={handleOtpPaste}>
                 {otpValue.map((digit, i) => (
                   <input
                     key={i}
@@ -158,7 +158,7 @@ export const Login = (): React.ReactElement => {
                     placeholder="·"
                     onChange={e => handleOtpInput(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className="w-12 h-14 text-center text-xl font-bold rounded-xl border-2 border-border bg-secondary focus:border-primary focus:bg-white outline-none transition-all duration-150"
+                    className="w-10 sm:w-12 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-lg sm:rounded-xl border-2 border-border bg-secondary focus:border-primary focus:bg-white outline-none transition-all duration-150"
                     autoFocus={i === 0}
                   />
                 ))}
@@ -168,14 +168,14 @@ export const Login = (): React.ReactElement => {
             <button
               type="submit"
               disabled={isLoading || otpValue.join('').length < 6}
-              className="btn-primary w-full h-11 rounded-lg disabled:opacity-60"
+              className="btn-primary w-full h-11 rounded-lg disabled:opacity-60 text-sm"
             >
               {isLoading ? 'Verifying…' : (
                 <><span>Verify &amp; Open Portal</span><ArrowRight className="w-4 h-4" /></>
               )}
             </button>
 
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
               <button
                 type="button"
                 className="flex items-center gap-1 hover:text-primary transition-colors"

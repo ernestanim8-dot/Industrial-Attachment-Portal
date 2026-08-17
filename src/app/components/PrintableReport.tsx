@@ -18,53 +18,53 @@ export function PrintableReport({ report, student, isOpen, onClose }: PrintableR
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+      <DialogContent className="w-[95vw] sm:w-full max-w-4xl max-h-[90vh] overflow-y-auto p-3 sm:p-6 rounded-2xl">
         <DialogHeader>
           <DialogTitle>Print Report</DialogTitle>
         </DialogHeader>
 
         <div className="print-content" id="printable-report-content">
           {/* Printable Document */}
-          <div className="bg-white p-12 print:p-0">
+          <div className="bg-white p-4 sm:p-8 md:p-12 print:p-0">
             {/* Header */}
-            <div className="text-center mb-8 border-b-2 border-blue-600 pb-6">
-              <div className="flex justify-center mb-4">
-                <div className="flex items-center justify-center w-16 h-16 bg-blue-600 rounded-full">
-                  <GraduationCap className="w-10 h-10 text-white" />
+            <div className="text-center mb-6 sm:mb-8 border-b-2 border-blue-600 pb-4 sm:pb-6">
+              <div className="flex justify-center mb-3 sm:mb-4">
+                <div className="flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-full">
+                  <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
                 </div>
               </div>
-              <h1 className="text-3xl mb-2">Takoradi Technical University</h1>
-              <h2 className="text-xl text-gray-700">Industrial Attachment Report</h2>
-              <p className="text-sm text-gray-600 mt-2">Academic Year 2025/2026</p>
+              <h1 className="text-xl sm:text-3xl font-bold mb-1 sm:mb-2 text-foreground">Takoradi Technical University</h1>
+              <h2 className="text-base sm:text-xl text-gray-700">Industrial Attachment Report</h2>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2">Academic Year 2025/2026</p>
             </div>
 
             {/* Student Information */}
-            <div className="mb-8 bg-gray-50 p-6 rounded-lg print:bg-transparent print:border print:border-gray-300">
-              <h3 className="text-lg mb-4 text-blue-600">Student Information</h3>
-              <div className="grid grid-cols-2 gap-4">
+            <div className="mb-6 sm:mb-8 bg-gray-50 p-4 sm:p-6 rounded-lg print:bg-transparent print:border print:border-gray-300">
+              <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-blue-600">Student Information</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
-                  <p className="text-sm text-gray-600">Student Name</p>
-                  <p className="font-medium">{student.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Student Name</p>
+                  <p className="font-medium text-sm sm:text-base">{student.name}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Student ID</p>
-                  <p className="font-medium">{student.studentId}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Student ID</p>
+                  <p className="font-medium text-sm sm:text-base">{student.studentId}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Department</p>
-                  <p className="font-medium">{student.department}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Department</p>
+                  <p className="font-medium text-sm sm:text-base">{student.department}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Email</p>
-                  <p className="font-medium">{student.email}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Email</p>
+                  <p className="font-medium text-sm sm:text-base truncate">{student.email}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Company</p>
-                  <p className="font-medium">{student.company || 'N/A'}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Company</p>
+                  <p className="font-medium text-sm sm:text-base">{student.company || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Attachment Period</p>
-                  <p className="font-medium">
+                  <p className="text-xs sm:text-sm text-gray-600">Attachment Period</p>
+                  <p className="font-medium text-sm sm:text-base">
                     {student.attachmentStartDate && student.attachmentEndDate
                       ? `${new Date(student.attachmentStartDate).toLocaleDateString()} - ${new Date(student.attachmentEndDate).toLocaleDateString()}`
                       : 'N/A'}
@@ -74,25 +74,25 @@ export function PrintableReport({ report, student, isOpen, onClose }: PrintableR
             </div>
 
             {/* Report Details */}
-            <div className="mb-8">
-              <h3 className="text-lg mb-4 text-blue-600">Report Details</h3>
+            <div className="mb-6 sm:mb-8">
+              <h3 className="text-base sm:text-lg font-bold mb-3 sm:mb-4 text-blue-600">Report Details</h3>
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm text-gray-600">Report Title</p>
-                  <p className="font-medium text-lg">{report.title}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">Report Title</p>
+                  <p className="font-medium text-base sm:text-lg">{report.title}</p>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
-                    <p className="text-sm text-gray-600">Week Number</p>
-                    <p className="font-medium">Week {report.weekNumber || 'N/A'}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Week Number</p>
+                    <p className="font-medium text-sm sm:text-base">Week {report.weekNumber || 'N/A'}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Submission Date</p>
-                    <p className="font-medium">{new Date(report.submittedDate).toLocaleDateString()}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Submission Date</p>
+                    <p className="font-medium text-sm sm:text-base">{new Date(report.submittedDate).toLocaleDateString()}</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-600">Status</p>
-                    <p className="font-medium capitalize">{report.status}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">Status</p>
+                    <p className="font-medium capitalize text-sm sm:text-base">{report.status}</p>
                   </div>
                   {report.grade !== undefined && (
                     <div>

@@ -11,8 +11,8 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
   FileText, Calendar, CheckCircle2, Clock, Eye, Upload,
-  ArrowLeft, FolderKanban, Star, Award, Layers,
-  ChevronDown, ChevronUp, AlertCircle
+  ArrowLeft, FolderKanban, Award, Layers,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
@@ -202,7 +202,7 @@ export function YourReportsUploaded() {
                     <Upload className="w-4 h-4" /> Upload New Report
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-lg rounded-2xl">
+                <DialogContent className="w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl">
                   <DialogHeader>
                     <DialogTitle>Upload Attachment Report</DialogTitle>
                     <DialogDescription>

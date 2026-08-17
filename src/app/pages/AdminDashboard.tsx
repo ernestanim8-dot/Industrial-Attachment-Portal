@@ -214,8 +214,8 @@ export function AdminDashboard() {
               </TabsList>
 
               <TabsContent value="students" className="mt-0">
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <Table>
+                <div className="rounded-xl border border-border overflow-x-auto">
+                  <Table className="min-w-[680px]">
                     <TableHeader>
                       <TableRow className="bg-secondary hover:bg-secondary">
                         <TableHead className="text-xs font-semibold">Name</TableHead>
@@ -272,8 +272,8 @@ export function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="supervisors" className="mt-0">
-                <div className="rounded-xl border border-border overflow-hidden">
-                  <Table>
+                <div className="rounded-xl border border-border overflow-x-auto">
+                  <Table className="min-w-[580px]">
                     <TableHeader>
                       <TableRow className="bg-secondary hover:bg-secondary">
                         <TableHead className="text-xs font-semibold">Name</TableHead>
@@ -368,8 +368,8 @@ export function AdminDashboard() {
                 No assumption forms submitted yet
               </div>
             ) : (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <Table>
+              <div className="rounded-xl border border-border overflow-x-auto">
+                <Table className="min-w-[680px]">
                   <TableHeader>
                     <TableRow className="bg-secondary hover:bg-secondary">
                       <TableHead className="text-xs font-semibold">Student</TableHead>
@@ -444,8 +444,8 @@ export function AdminDashboard() {
                 No letter requests submitted yet
               </div>
             ) : (
-              <div className="rounded-xl border border-border overflow-hidden">
-                <Table>
+              <div className="rounded-xl border border-border overflow-x-auto">
+                <Table className="min-w-[680px]">
                   <TableHeader>
                     <TableRow className="bg-secondary hover:bg-secondary">
                       <TableHead className="text-xs font-semibold">Student</TableHead>

@@ -192,17 +192,17 @@ export function StudentServicePage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex items-stretch relative border-b border-border">
+      <div className="flex flex-wrap sm:flex-nowrap items-stretch relative border-b border-border overflow-x-auto">
         {/* Step 1 tab */}
         <button
           type="button"
           onClick={() => setLetterStep(1)}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-colors ${letterStep === 1
+          className={`flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold transition-colors ${letterStep === 1
               ? 'bg-red-600 text-white'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
-          <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${letterStep === 1 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 ${letterStep === 1 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
             }`}>1</span>
           Company Information
         </button>
@@ -211,23 +211,23 @@ export function StudentServicePage() {
         <button
           type="button"
           onClick={() => { if (validateLetterStep1()) setLetterStep(2); }}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-colors ${letterStep === 2
+          className={`flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold transition-colors ${letterStep === 2
               ? 'bg-blue-500 text-white'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
-          <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${letterStep === 2 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 ${letterStep === 2 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
             }`}>2</span>
           Terms of Agreement
         </button>
 
-        <div className="flex-1 bg-muted flex items-center justify-end px-4">
+        <div className="flex-1 bg-muted flex items-center justify-end px-3 sm:px-4">
           <button
             type="button"
             title="Settings"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
@@ -531,17 +531,17 @@ export function StudentServicePage() {
     <div className="card-clean rounded-xl overflow-hidden shadow-sm border border-border">
 
       {/* ── Tab header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-stretch relative">
+      <div className="flex flex-wrap sm:flex-nowrap items-stretch relative overflow-x-auto border-b border-border">
         {/* Step 1 tab */}
         <button
           type="button"
           onClick={() => setStep(1)}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-colors ${step === 1
+          className={`flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold transition-colors ${step === 1
               ? 'bg-red-600 text-white'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
-          <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${step === 1 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 ${step === 1 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
             }`}>1</span>
           Company Information
         </button>
@@ -550,24 +550,24 @@ export function StudentServicePage() {
         <button
           type="button"
           onClick={() => { if (validateStep1()) setStep(2); }}
-          className={`flex items-center gap-3 px-6 py-3.5 text-sm font-semibold transition-colors ${step === 2
+          className={`flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 sm:py-3.5 text-xs sm:text-sm font-semibold transition-colors ${step === 2
               ? 'bg-blue-500 text-white'
               : 'bg-muted text-muted-foreground hover:bg-muted/80'
             }`}
         >
-          <span className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold shrink-0 ${step === 2 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 ${step === 2 ? 'border-white text-white' : 'border-muted-foreground text-muted-foreground'
             }`}>2</span>
           Terms of Agreement
         </button>
 
         {/* Spacer + gear icon */}
-        <div className="flex-1 bg-muted flex items-center justify-end px-4">
+        <div className="flex-1 bg-muted flex items-center justify-end px-3 sm:px-4">
           <button
             type="button"
             title="Settings"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
       </div>
