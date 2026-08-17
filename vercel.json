@@ -1,0 +1,13 @@
+{
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(api|auth|reports|assessments|notifications|users)/:path*",
+      "destination": "https://attachment-portal-api.onrender.com/$1/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
