@@ -64,7 +64,7 @@ export const submitReport = async (req: AuthRequest, res: Response): Promise<voi
 
 export const getReports = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    let query = {};
+    let query: Record<string, unknown> = {};
     
     // If student, only see their own reports
     if (req.user.role === 'student') {
@@ -72,9 +72,11 @@ export const getReports = async (req: AuthRequest, res: Response): Promise<void>
     } 
     // If supervisor, only see reports of assigned students
     else if (req.user.role === 'supervisor') {
-      // Logic to find assigned students' reports would go here
-      // For now, grabbing all reports or could filter by an assigned list array
+      const assignedStudents = await User.find({ assignedSupervisorId: req.user._id }).select('_id');
+      const studentIds = assignedStudents.map(s => s._id);
+      query = { studentId: { $in: studentIds } };
     }
+    // Admin sees all reports (no query filter needed)
 
     const reports = await Report.find(query)
       .populate('studentId', 'name email')

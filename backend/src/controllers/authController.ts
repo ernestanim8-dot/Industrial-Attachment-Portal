@@ -89,8 +89,6 @@ export const login = async (req: Request, res: Response): Promise<void> => {
           maskedPhone: user.phone
             ? `+${'*'.repeat(user.phone.length - 4)}${user.phone.slice(-4)}`
             : null,
-          // DEV ONLY: expose OTP so testers can see it in the UI toast
-          devOtp: otp,
         });
         return;
       }

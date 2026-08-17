@@ -6,7 +6,6 @@ export interface OtpChallenge {
   requiresOtp: true;
   userId: string;
   maskedPhone: string | null;
-  devOtp: string; // DEV ONLY — remove in production
 }
 
 interface AuthContextType {
@@ -174,13 +173,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const targetRole = roleArg || found.role;
 
       if (targetRole === 'admin' || targetRole === 'supervisor' || found.role === 'admin' || found.role === 'supervisor') {
-        const devOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        setPendingMockOtp({ userId: found.id, otp: devOtp, user: found });
+        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
+        setPendingMockOtp({ userId: found.id, otp: mockOtp, user: found });
+        // In offline/demo mode, log the OTP to the browser console for testing
+        console.info(`[DEMO MODE] OTP for ${found.name}: ${mockOtp}`);
         return {
           requiresOtp: true,
           userId: found.id,
           maskedPhone: found.phone ? `+*** *** ${found.phone.slice(-4)}` : null,
-          devOtp,
         };
       }
 

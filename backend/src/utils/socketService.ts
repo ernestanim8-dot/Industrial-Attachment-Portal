@@ -4,10 +4,12 @@ import { Server } from 'http';
 let io: SocketIOServer;
 
 export const initSocket = (server: Server) => {
+  const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
   io = new SocketIOServer(server, {
     cors: {
-      origin: '*', // Adjust this for production
+      origin: allowedOrigins,
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      credentials: true,
     },
   });
 

@@ -9,10 +9,13 @@ build/
 
 # Environment Variables & Secrets
 .env
-.env.*
+.env.local
+.env.*.local
 backend/.env
-backend/.env.*
+backend/.env.local
+backend/.env.*.local
 *.env
+
 
 # IDE / Editor configuration
 .vscode/

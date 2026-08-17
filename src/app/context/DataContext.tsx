@@ -738,7 +738,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const socket = io('http://localhost:5000');
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
     
     const userRecord = user as unknown as Record<string, unknown>;
     const userId = (userRecord._id || user.id) as string;

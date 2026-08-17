@@ -59,8 +59,6 @@ export const Login = (): React.ReactElement => {
           `🔐 OTP sent to ${result.maskedPhone ?? 'registered phone'}`,
           { duration: 6000 }
         );
-        // DEV: show real OTP in a toast so testers can copy it without checking console
-        toast.success(`[DEV] Your OTP is: ${result.devOtp}`, { duration: 30000 });
       } else {
         toast.success('Welcome back!');
         navigateToDashboard(result as UserRole);
