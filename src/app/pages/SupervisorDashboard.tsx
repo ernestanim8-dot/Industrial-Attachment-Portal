@@ -11,8 +11,8 @@ import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
-import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, AlertTriangle, CheckCircle2, Award, FolderKanban } from 'lucide-react';
-import { Report, Student, DailyReport, WeeklyReportUpdate, MonthlyReport, MissingDailyReport } from '../types';
+import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, CheckCircle2, FolderKanban } from 'lucide-react';
+import { Report, Student, DailyReport } from '../types';
 import { downloadApiFile } from '../api';
 import { Badge } from '../components/ui/badge';
 
