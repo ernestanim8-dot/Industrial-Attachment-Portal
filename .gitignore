@@ -37,3 +37,6 @@ Thumbs.db
 *.zip
 *.tar.gz
 screenshots/
+tmp/
+*.tmp
+*.bak
