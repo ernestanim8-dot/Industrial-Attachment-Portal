@@ -10,6 +10,10 @@ import reportRoutes from './routes/reports';
 import userRoutes from './routes/users';
 import assessmentRoutes from './routes/assessments';
 import notificationRoutes from './routes/notifications';
+import assumptionRoutes from './routes/assumptions';
+import attachmentLetterRoutes from './routes/attachmentLetters';
+import locationRoutes from './routes/locations';
+import dailyReportRoutes from './routes/dailyReports';
 import { initSocket } from './utils/socketService';
 
 dotenv.config();
@@ -52,6 +56,10 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/assumptions', assumptionRoutes);
+app.use('/api/attachment-letters', attachmentLetterRoutes);
+app.use('/api/locations', locationRoutes);
+app.use('/api/daily-reports', dailyReportRoutes);
 
 // Basic Route
 app.get('/', (req, res) => {

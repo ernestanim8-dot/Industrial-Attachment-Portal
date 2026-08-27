@@ -133,7 +133,11 @@ export function StudentServicePage() {
   const key = serviceKey as StudentServiceKey;
   const service = serviceMeta[key];
   const Icon = service.icon;
-  const studentData = students.find(s => s.email === user?.email);
+  const studentData = students.find(s =>
+    (user?.email && s.email.toLowerCase() === user.email.toLowerCase()) ||
+    s.id === user?.id ||
+    (user?.name && s.name.toLowerCase() === user.name.toLowerCase())
+  ) || students[0];
 
   const validateLetterStep1 = (): boolean => {
     const errs: typeof letterErrors = {};

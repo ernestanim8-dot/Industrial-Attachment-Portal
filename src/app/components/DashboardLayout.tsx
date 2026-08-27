@@ -80,23 +80,34 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
   return (
     <div className="min-h-screen bg-background flex">
 
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity duration-300"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
       {/* ── Sidebar ── */}
       <aside
         className={`
-          fixed inset-y-0 left-0 z-40 w-60 flex flex-col
-          bg-sidebar text-sidebar-foreground
+          fixed inset-y-0 left-0 z-50 w-72 sm:w-80 lg:w-60 flex flex-col
+          bg-sidebar text-sidebar-foreground shadow-2xl lg:shadow-none
           transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
           lg:translate-x-0 lg:static lg:inset-auto
         `}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between px-4 h-20 border-b border-sidebar-border shrink-0">
-          {/* Logo */}
-          <div className="w-full h-14 bg-white rounded-lg flex items-center justify-center p-2 mr-2">
+        <div className="flex items-center justify-between px-4 h-20 border-b border-sidebar-border shrink-0 gap-3">
+          <div className="flex-1 h-14 bg-white rounded-lg flex items-center justify-center p-2 shadow-xs">
             <img src={ttuLogo} alt="TTU Logo" className="max-w-full h-full object-contain" />
           </div>
-          <button title="Close sidebar" className="lg:hidden text-white/60 hover:text-white shrink-0" onClick={() => setSidebarOpen(false)}>
+          <button
+            title="Close sidebar"
+            className="lg:hidden p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 shrink-0 transition-colors"
+            onClick={() => setSidebarOpen(false)}
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -236,13 +247,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
         </div>
       </aside>
 
-      {/* Mobile backdrop */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-xs lg:hidden transition-opacity duration-300"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+
 
       {/* ── Main area ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">

@@ -24,3 +24,5 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     res.status(401).json({ message: 'Not authorized, no token' });
   }
 };
+
+export const authMiddleware = protect;

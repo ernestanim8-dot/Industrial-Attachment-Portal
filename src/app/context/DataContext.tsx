@@ -52,7 +52,7 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 const initialStudents: Student[] = [
   {
     id: 'student1',
-    email: 'john.doe@university.edu',
+    email: 'john.student@ttu.edu.gh',
     name: 'John Doe',
     role: 'student',
     studentId: 'STU001',
@@ -132,7 +132,7 @@ const initialStudents: Student[] = [
   },
   {
     id: 'student2',
-    email: 'jane.smith@university.edu',
+    email: 'jane.student@ttu.edu.gh',
     name: 'Jane Smith',
     role: 'student',
     studentId: 'STU002',
@@ -723,9 +723,44 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       if (!user) return;
       
       try {
-        const fetchedReports = await fetchApi('/reports');
-        if (Array.isArray(fetchedReports) && fetchedReports.length > 0) {
-          setReports(fetchedReports);
+        const [
+          fetchedReports,
+          fetchedAssumptions,
+          fetchedLetters,
+          fetchedLocations,
+          fetchedCheckIns,
+          fetchedDailyReports,
+          fetchedNotifications,
+        ] = await Promise.allSettled([
+          fetchApi('/reports'),
+          fetchApi('/assumptions'),
+          fetchApi('/attachment-letters'),
+          fetchApi('/locations'),
+          fetchApi('/locations/check-ins'),
+          fetchApi('/daily-reports'),
+          fetchApi('/notifications'),
+        ]);
+
+        if (fetchedReports.status === 'fulfilled' && Array.isArray(fetchedReports.value) && fetchedReports.value.length > 0) {
+          setReports(fetchedReports.value.map((r: Report & { _id?: string }) => ({ ...r, id: r._id || r.id })));
+        }
+        if (fetchedAssumptions.status === 'fulfilled' && Array.isArray(fetchedAssumptions.value) && fetchedAssumptions.value.length > 0) {
+          setAssumptionSubmissions(fetchedAssumptions.value.map((a: AssumptionSubmission & { _id?: string }) => ({ ...a, id: a._id || a.id })));
+        }
+        if (fetchedLetters.status === 'fulfilled' && Array.isArray(fetchedLetters.value) && fetchedLetters.value.length > 0) {
+          setAttachmentLetterSubmissions(fetchedLetters.value.map((l: AttachmentLetterSubmission & { _id?: string }) => ({ ...l, id: l._id || l.id })));
+        }
+        if (fetchedLocations.status === 'fulfilled' && Array.isArray(fetchedLocations.value) && fetchedLocations.value.length > 0) {
+          setLocations(fetchedLocations.value.map((loc: AssignedLocation & { _id?: string }) => ({ ...loc, id: loc._id || loc.id })));
+        }
+        if (fetchedCheckIns.status === 'fulfilled' && Array.isArray(fetchedCheckIns.value) && fetchedCheckIns.value.length > 0) {
+          setDailyCheckIns(fetchedCheckIns.value.map((c: DailyLocationCheckIn & { _id?: string }) => ({ ...c, id: c._id || c.id })));
+        }
+        if (fetchedDailyReports.status === 'fulfilled' && Array.isArray(fetchedDailyReports.value) && fetchedDailyReports.value.length > 0) {
+          setDailyReports(fetchedDailyReports.value.map((d: DailyReport & { _id?: string }) => ({ ...d, id: d._id || d.id })));
+        }
+        if (fetchedNotifications.status === 'fulfilled' && Array.isArray(fetchedNotifications.value) && fetchedNotifications.value.length > 0) {
+          setNotifications(fetchedNotifications.value.map((n: Notification & { _id?: string }) => ({ ...n, id: n._id || n.id })));
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -833,30 +868,57 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addAssessment = (assessment: Omit<Assessment, 'id' | 'assessedDate'>) => {
-    const newAssessment: Assessment = {
-      ...assessment,
-      id: `assess${Date.now()}`,
-      assessedDate: new Date().toISOString().split('T')[0],
-    };
-    setAssessments([...assessments, newAssessment]);
+  const addAssessment = async (assessment: Omit<Assessment, 'id' | 'assessedDate'>) => {
+    let newAssessment: Assessment;
+    try {
+      const created = await fetchApi('/assessments', {
+        method: 'POST',
+        body: JSON.stringify(assessment),
+      });
+      newAssessment = {
+        ...created,
+        id: created._id || created.id,
+        assessedDate: created.createdAt ? new Date(created.createdAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      };
+    } catch {
+      newAssessment = {
+        ...assessment,
+        id: `assess${Date.now()}`,
+        assessedDate: new Date().toISOString().split('T')[0],
+      };
+    }
+    setAssessments(prev => [...prev, newAssessment]);
   };
 
-  const markNotificationAsRead = (id: string) => {
-    setNotifications(notifications.map(n => (n.id === id ? { ...n, read: true } : n)));
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => (n.id === id ? { ...n, read: true } : n)));
+    try {
+      await fetchApi(`/notifications/${id}/read`, { method: 'PUT' });
+    } catch {
+      // Ignored for offline
+    }
   };
 
-  const assignSupervisor = (studentId: string, supervisorId: string) => {
-    setStudents(
-      students.map(s => (s.id === studentId ? { ...s, supervisorId } : s))
+  const assignSupervisor = async (studentId: string, supervisorId: string) => {
+    setStudents(prev =>
+      prev.map(s => (s.id === studentId ? { ...s, supervisorId } : s))
     );
-    setSupervisors(
-      supervisors.map(sup =>
+    setSupervisors(prev =>
+      prev.map(sup =>
         sup.id === supervisorId
           ? { ...sup, assignedStudents: [...sup.assignedStudents, studentId] }
           : sup
       )
     );
+
+    try {
+      await fetchApi(`/users/${studentId}/assign`, {
+        method: 'PUT',
+        body: JSON.stringify({ supervisorId }),
+      });
+    } catch {
+      // Offline fallback
+    }
 
     const newNotif: Notification = {
       id: `notif${Date.now()}`,
@@ -877,21 +939,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       progress: 0,
       currentLevel: student.currentLevel || 1,
     };
-    setStudents([...students, newStudent]);
+    setStudents(prev => [...prev, newStudent]);
   };
 
-  const removeUser = (userId: string) => {
-    setStudents(students.filter(s => s.id !== userId));
-    setSupervisors(supervisors.filter(s => s.id !== userId));
+  const removeUser = async (userId: string) => {
+    setStudents(prev => prev.filter(s => s.id !== userId));
+    setSupervisors(prev => prev.filter(s => s.id !== userId));
+    try {
+      await fetchApi(`/users/${userId}`, { method: 'DELETE' });
+    } catch {
+      // Offline fallback
+    }
   };
 
-  const submitAssumptionForm = (data: Omit<AssumptionSubmission, 'id' | 'submittedAt' | 'status'>) => {
-    const newSubmission: AssumptionSubmission = {
-      ...data,
-      id: `assumption${Date.now()}`,
-      submittedAt: new Date().toISOString(),
-      status: 'pending',
-    };
+  const submitAssumptionForm = async (data: Omit<AssumptionSubmission, 'id' | 'submittedAt' | 'status'>) => {
+    let newSubmission: AssumptionSubmission;
+    try {
+      const created = await fetchApi('/assumptions', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      newSubmission = {
+        ...created,
+        id: created._id || created.id,
+      };
+    } catch {
+      newSubmission = {
+        ...data,
+        id: `assumption${Date.now()}`,
+        submittedAt: new Date().toISOString(),
+        status: 'pending',
+      };
+    }
+
     setAssumptionSubmissions(prev => [newSubmission, ...prev]);
     
     const newNotif: Notification = {
@@ -906,19 +986,40 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const updateAssumptionStatus = (id: string, status: AssumptionSubmission['status']) => {
+  const updateAssumptionStatus = async (id: string, status: AssumptionSubmission['status']) => {
     setAssumptionSubmissions(prev =>
       prev.map(a => (a.id === id ? { ...a, status } : a))
     );
+    try {
+      await fetchApi(`/assumptions/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch {
+      // Offline fallback
+    }
   };
 
-  const submitAttachmentLetter = (data: Omit<AttachmentLetterSubmission, 'id' | 'submittedAt' | 'status'>) => {
-    const newSubmission: AttachmentLetterSubmission = {
-      ...data,
-      id: `letter${Date.now()}`,
-      submittedAt: new Date().toISOString(),
-      status: 'pending',
-    };
+  const submitAttachmentLetter = async (data: Omit<AttachmentLetterSubmission, 'id' | 'submittedAt' | 'status'>) => {
+    let newSubmission: AttachmentLetterSubmission;
+    try {
+      const created = await fetchApi('/attachment-letters', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      });
+      newSubmission = {
+        ...created,
+        id: created._id || created.id,
+      };
+    } catch {
+      newSubmission = {
+        ...data,
+        id: `letter${Date.now()}`,
+        submittedAt: new Date().toISOString(),
+        status: 'pending',
+      };
+    }
+
     setAttachmentLetterSubmissions(prev => [newSubmission, ...prev]);
 
     const newNotif: Notification = {
@@ -933,27 +1034,48 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const updateAttachmentLetterStatus = (id: string, status: AttachmentLetterSubmission['status']) => {
+  const updateAttachmentLetterStatus = async (id: string, status: AttachmentLetterSubmission['status']) => {
     setAttachmentLetterSubmissions(prev =>
       prev.map(l => (l.id === id ? { ...l, status } : l))
     );
+    try {
+      await fetchApi(`/attachment-letters/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      });
+    } catch {
+      // Offline fallback
+    }
   };
 
   // ═══════════════════════════════════════════════════════════
   // Location Allocation & Monitoring Handlers
   // ═══════════════════════════════════════════════════════════
 
-  const addLocation = (locData: Omit<AssignedLocation, 'id' | 'createdAt'>) => {
-    const newLocation: AssignedLocation = {
-      ...locData,
-      id: `loc-${Date.now()}`,
-      createdAt: new Date().toISOString(),
-    };
+  const addLocation = async (locData: Omit<AssignedLocation, 'id' | 'createdAt'>) => {
+    let newLocation: AssignedLocation;
+    try {
+      const created = await fetchApi('/locations', {
+        method: 'POST',
+        body: JSON.stringify(locData),
+      });
+      newLocation = {
+        ...created,
+        id: created._id || created.id,
+      };
+    } catch {
+      newLocation = {
+        ...locData,
+        id: `loc-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      };
+    }
+
     setLocations(prev => [newLocation, ...prev]);
     toast.success(`Location "${newLocation.name}" added successfully`);
   };
 
-  const updateLocation = (id: string, updates: Partial<AssignedLocation>) => {
+  const updateLocation = async (id: string, updates: Partial<AssignedLocation>) => {
     setLocations(prev => prev.map(loc => loc.id === id ? { ...loc, ...updates } : loc));
     
     // Also update any students currently assigned to this location
@@ -969,12 +1091,21 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
       return st;
     }));
+
+    try {
+      await fetchApi(`/locations/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+    } catch {
+      // Offline fallback
+    }
+
     toast.success('Location updated successfully');
   };
 
-  const deleteLocation = (id: string) => {
+  const deleteLocation = async (id: string) => {
     setLocations(prev => prev.filter(l => l.id !== id));
-    // Clear assignment from students
     setStudents(prev => prev.map(st => st.assignedLocationId === id ? {
       ...st,
       assignedLocationId: undefined,
@@ -983,10 +1114,17 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       assignedLocationZone: undefined,
       assignedLocationCity: undefined,
     } : st));
+
+    try {
+      await fetchApi(`/locations/${id}`, { method: 'DELETE' });
+    } catch {
+      // Offline fallback
+    }
+
     toast.success('Location removed');
   };
 
-  const assignStudentLocation = (studentId: string, locationId: string) => {
+  const assignStudentLocation = async (studentId: string, locationId: string) => {
     const loc = locations.find(l => l.id === locationId);
     if (!loc) return;
 
@@ -1004,6 +1142,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       return st;
     }));
 
+    try {
+      await fetchApi('/locations/assign', {
+        method: 'POST',
+        body: JSON.stringify({ studentId, locationId }),
+      });
+    } catch {
+      // Offline fallback
+    }
+
     // Send notification to student
     const newNotif: Notification = {
       id: `notif${Date.now()}`,
@@ -1018,12 +1165,24 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Student allocated to ${loc.name}`);
   };
 
-  const submitDailyLocationCheckIn = (checkInData: Omit<DailyLocationCheckIn, 'id' | 'timestamp'>) => {
-    const newCheckIn: DailyLocationCheckIn = {
-      ...checkInData,
-      id: `chk-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-    };
+  const submitDailyLocationCheckIn = async (checkInData: Omit<DailyLocationCheckIn, 'id' | 'timestamp'>) => {
+    let newCheckIn: DailyLocationCheckIn;
+    try {
+      const created = await fetchApi('/locations/check-in', {
+        method: 'POST',
+        body: JSON.stringify(checkInData),
+      });
+      newCheckIn = {
+        ...created,
+        id: created._id || created.id,
+      };
+    } catch {
+      newCheckIn = {
+        ...checkInData,
+        id: `chk-${Date.now()}`,
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     setDailyCheckIns(prev => [newCheckIn, ...prev]);
 
@@ -1047,14 +1206,26 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // DAILY, WEEKLY, AND MONTHLY REPORTS HIERARCHY LOGIC
   // ═══════════════════════════════════════════════════════════════
 
-  const addDailyReport = (reportData: Omit<DailyReport, 'id' | 'submittedAt' | 'status'>) => {
-    const newDaily: DailyReport = {
-      ...reportData,
-      id: `dr_${Date.now()}`,
-      submittedAt: new Date().toISOString(),
-      status: 'submitted',
-      locationVerified: true,
-    };
+  const addDailyReport = async (reportData: Omit<DailyReport, 'id' | 'submittedAt' | 'status'>) => {
+    let newDaily: DailyReport;
+    try {
+      const created = await fetchApi('/daily-reports', {
+        method: 'POST',
+        body: JSON.stringify(reportData),
+      });
+      newDaily = {
+        ...created,
+        id: created._id || created.id,
+      };
+    } catch {
+      newDaily = {
+        ...reportData,
+        id: `dr_${Date.now()}`,
+        submittedAt: new Date().toISOString(),
+        status: 'submitted',
+        locationVerified: true,
+      };
+    }
 
     setDailyReports(prev => [newDaily, ...prev]);
 
@@ -1079,7 +1250,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Daily report for ${reportData.dayOfWeek} logged & aggregated into Week ${reportData.weekNumber} update!`);
   };
 
-  const reviewDailyReport = (id: string, feedback: string, grade?: number) => {
+  const reviewDailyReport = async (id: string, feedback: string, grade?: number) => {
     setDailyReports(prev => prev.map(dr => {
       if (dr.id === id) {
         return {
@@ -1091,6 +1262,15 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       }
       return dr;
     }));
+
+    try {
+      await fetchApi(`/daily-reports/${id}/review`, {
+        method: 'PATCH',
+        body: JSON.stringify({ feedback, grade }),
+      });
+    } catch {
+      // Offline fallback
+    }
 
     toast.success('Daily report feedback saved successfully!');
   };

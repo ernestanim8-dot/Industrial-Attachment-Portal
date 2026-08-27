@@ -28,7 +28,8 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     const { name, email, password, role, department, phone, accessCode } = req.body;
     
     // Protect Admin and Supervisor account creation
-    if ((role === 'admin' || role === 'supervisor') && accessCode !== 'TTU-STAFF-2026') {
+    const validStaffCode = process.env.STAFF_ACCESS_CODE || 'TTU-STAFF-2026';
+    if ((role === 'admin' || role === 'supervisor') && accessCode !== validStaffCode) {
       res.status(403).json({ message: 'Invalid or missing Staff Access Code for staff account registration.' });
       return;
     }

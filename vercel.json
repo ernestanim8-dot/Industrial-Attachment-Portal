@@ -2,7 +2,7 @@
   "framework": "vite",
   "rewrites": [
     {
-      "source": "/(api|auth|reports|assessments|notifications|users)/:path*",
+      "source": "/(api|auth|reports|assessments|notifications|users|assumptions|attachment-letters|locations|daily-reports)/:path*",
       "destination": "https://attachment-portal-api.onrender.com/$1/:path*"
     },
     {
