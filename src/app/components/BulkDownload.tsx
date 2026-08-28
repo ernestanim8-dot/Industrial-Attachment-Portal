@@ -45,7 +45,7 @@ export function BulkDownload({ reports }: BulkDownloadProps) {
     // In a real application, this would create a ZIP file
     // For now, we'll just show a success message
     const selectedReportsList = reports.filter(r => selectedReports.includes(r.id));
-    
+
     // Create a mock text file with report information
     const content = selectedReportsList.map(report => `
 Report: ${report.title}

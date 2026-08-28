@@ -13,17 +13,17 @@ export function CalendarView() {
   // Generate deadline dates
   const deadlines = students.flatMap(student => {
     if (!student.attachmentStartDate) return [];
-    
+
     const startDate = new Date(student.attachmentStartDate);
     const deadlinesList = [];
-    
+
     // Generate weekly deadlines for 20 weeks
     for (let i = 1; i <= 20; i++) {
       const deadline = addWeeks(startDate, i);
       const weekReports = reports.filter(
         r => r.studentId === student.id && r.weekNumber === i
       );
-      
+
       deadlinesList.push({
         date: deadline,
         week: i,
@@ -33,7 +33,7 @@ export function CalendarView() {
         report: weekReports[0],
       });
     }
-    
+
     return deadlinesList;
   });
 

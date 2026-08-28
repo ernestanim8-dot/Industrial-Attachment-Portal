@@ -13,7 +13,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import {
   Upload, FileText, Activity, Calendar,
-  CheckCircle, Clock, Eye, Star, Building2,
+  CheckCircle, Clock, Star,
   ClipboardCheck, FileOutput,
   CreditCard, MapPin, ShieldCheck, AlertTriangle,
   Navigation, CheckCircle2, ShieldAlert
@@ -197,18 +197,6 @@ export function StudentDashboard() {
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'graded':
-        return <span className="badge-green inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"><CheckCircle className="w-3 h-3" />Graded</span>;
-      case 'reviewed':
-        return <span className="badge-blue inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"><Clock className="w-3 h-3" />Reviewed</span>;
-      case 'pending':
-        return <span className="badge-amber inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium"><Clock className="w-3 h-3" />Pending</span>;
-      default:
-        return <span className="bg-gray-100 text-gray-600 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium">{status}</span>;
-    }
-  };
 
   const dashboardCards = [
     { label: 'Log Book Payment', description: 'Pay for your industrial attachment log book and check payment status.', icon: CreditCard, href: '/student/services/fee-payments' },

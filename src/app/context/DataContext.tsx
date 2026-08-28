@@ -721,7 +721,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
-      
+
       try {
         const [
           fetchedReports,
@@ -766,7 +766,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         console.error('Failed to fetch data:', error);
       }
     };
- 
+
     fetchData();
   }, [user]);
 
@@ -774,7 +774,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     if (!user) return;
 
     const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
-    
+
     const userRecord = user as unknown as Record<string, unknown>;
     const userId = (userRecord._id || user.id) as string;
     socket.emit('join_room', userId);
@@ -785,9 +785,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ...notification,
         id: (notifRecord._id || notification.id || `notif${Date.now()}`) as string
       };
-      
+
       setNotifications(prev => [newNotif, ...prev]);
-      
+
       toast(newNotif.title, {
         description: newNotif.message,
       });
@@ -826,9 +826,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           level: studentLevel,
         };
       }
-      
+
       setReports(prev => [newReport, ...prev]);
-      
+
       const newNotif: Notification = {
         id: `notif${Date.now()}`,
         userId: user?.id || report.studentId,
@@ -973,7 +973,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     }
 
     setAssumptionSubmissions(prev => [newSubmission, ...prev]);
-    
+
     const newNotif: Notification = {
       id: `notif${Date.now()}`,
       userId: data.studentId,
@@ -1077,7 +1077,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const updateLocation = async (id: string, updates: Partial<AssignedLocation>) => {
     setLocations(prev => prev.map(loc => loc.id === id ? { ...loc, ...updates } : loc));
-    
+
     // Also update any students currently assigned to this location
     setStudents(prev => prev.map(st => {
       if (st.assignedLocationId === id) {
