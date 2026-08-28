@@ -44,6 +44,8 @@ interface DataContextType {
   // Daily, Weekly, Monthly Reports
   addDailyReport: (report: Omit<DailyReport, 'id' | 'submittedAt' | 'status'>) => void;
   reviewDailyReport: (id: string, feedback: string, grade?: number) => void;
+  addWeeklyReport: (report: Omit<WeeklyReportUpdate, 'id'>) => void;
+  addMonthlyReport: (report: Omit<MonthlyReport, 'id'>) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -1247,7 +1249,19 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setNotifications(prev => [newNotif, ...prev]);
     }
 
-    toast.success(`Daily report for ${reportData.dayOfWeek} logged & aggregated into Week ${reportData.weekNumber} update!`);
+    toast.success(`Daily report for ${reportData.dayOfWeek} submitted!`);
+  };
+
+  const addWeeklyReport = (data: Omit<WeeklyReportUpdate, 'id'>) => {
+    const newWeekly: WeeklyReportUpdate = { ...data, id: `wk_${Date.now()}` };
+    setWeeklyUpdates(prev => [newWeekly, ...prev]);
+    toast.success(`Weekly ${data.weekNumber} report uploaded successfully!`);
+  };
+
+  const addMonthlyReport = (data: Omit<MonthlyReport, 'id'>) => {
+    const newMonthly: MonthlyReport = { ...data, id: `mo_${Date.now()}` };
+    setMonthlyReports(prev => [newMonthly, ...prev]);
+    toast.success(`${data.monthName} report uploaded successfully!`);
   };
 
   const reviewDailyReport = async (id: string, feedback: string, grade?: number) => {
@@ -1275,93 +1289,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success('Daily report feedback saved successfully!');
   };
 
-  // Dynamically compute Weekly Updates aggregated from Daily Reports
-  const weeklyUpdates: WeeklyReportUpdate[] = (() => {
-    const updates: WeeklyReportUpdate[] = [];
+  // Weekly updates are no longer auto-aggregated from daily reports;
+  // they only exist when a student explicitly uploads one.
+  const [weeklyUpdates, setWeeklyUpdates] = useState<WeeklyReportUpdate[]>([]);
 
-    students.forEach(student => {
-      const studentDaily = dailyReports.filter(d => d.studentId === student.id);
-      const studentMissing = missingDailyReports.filter(m => m.studentId === student.id);
-
-      // Determine active weeks (e.g. 1 to 4)
-      const weekNumbers = Array.from(new Set([...studentDaily.map(d => d.weekNumber), 1, 2]));
-
-      weekNumbers.forEach(weekNum => {
-        const weekDailies = studentDaily.filter(d => d.weekNumber === weekNum);
-        const weekMissing = studentMissing.filter(m => m.weekNumber === weekNum);
-        const totalHours = weekDailies.reduce((acc, d) => acc + (d.hoursWorked || 0), 0);
-        const gradedDailies = weekDailies.filter(d => d.grade !== undefined);
-        const avgGrade = gradedDailies.length > 0
-          ? Math.round(gradedDailies.reduce((acc, d) => acc + (d.grade || 0), 0) / gradedDailies.length)
-          : undefined;
-
-        const summaryTasks = weekDailies.map(d => d.title).join('; ');
-
-        updates.push({
-          id: `wk_${student.id}_${weekNum}`,
-          studentId: student.id,
-          weekNumber: weekNum,
-          monthNumber: weekDailies[0]?.monthNumber || 1,
-          startDate: `2026-08-${weekNum === 1 ? '03' : '10'}`,
-          endDate: `2026-08-${weekNum === 1 ? '07' : '14'}`,
-          dailyReports: weekDailies,
-          missingDaysCount: weekMissing.length,
-          submittedDaysCount: weekDailies.length,
-          totalHoursWorked: totalHours,
-          summaryHighlights: summaryTasks || 'Active weekly industrial rotation tasks.',
-          status: weekMissing.length === 0 && weekDailies.length >= 5 ? 'complete' : 'incomplete',
-          overallGrade: avgGrade,
-          supervisorFeedback: weekMissing.length > 0 ? `${weekMissing.length} daily report(s) missing for this week.` : 'All required daily reports submitted.',
-        });
-      });
-    });
-
-    return updates;
-  })();
-
-  // Dynamically compute Monthly Reports aggregated from Weekly Updates
-  const monthlyReports: MonthlyReport[] = (() => {
-    const months: MonthlyReport[] = [];
-
-    students.forEach(student => {
-      const studentWeeks = weeklyUpdates.filter(w => w.studentId === student.id);
-      const studentDailies = dailyReports.filter(d => d.studentId === student.id);
-      const studentMissing = missingDailyReports.filter(m => m.studentId === student.id);
-
-      const totalSubmitted = studentDailies.length;
-      const totalMissing = studentMissing.length;
-      const totalHours = studentDailies.reduce((acc, d) => acc + (d.hoursWorked || 0), 0);
-      const expectedDays = totalSubmitted + totalMissing || 10;
-      const compliance = Math.round((totalSubmitted / Math.max(expectedDays, 1)) * 100);
-
-      const gradedWeeks = studentWeeks.filter(w => w.overallGrade !== undefined);
-      const monthlyAvg = gradedWeeks.length > 0
-        ? Math.round(gradedWeeks.reduce((acc, w) => acc + (w.overallGrade || 0), 0) / gradedWeeks.length)
-        : undefined;
-
-      months.push({
-        id: `mo_${student.id}_1`,
-        studentId: student.id,
-        monthNumber: 1,
-        monthName: 'Month 1 (August 2026)',
-        startDate: '2026-08-01',
-        endDate: '2026-08-31',
-        weeks: studentWeeks,
-        totalDailyReportsSubmitted: totalSubmitted,
-        totalDailyReportsMissing: totalMissing,
-        totalHoursLogged: totalHours,
-        complianceRate: compliance,
-        executiveSummary: `Cumulative industrial progress across ${studentWeeks.length} weeks. Completed ${totalHours} logged on-site hours with a ${compliance}% daily submission compliance rate.`,
-        status: totalMissing === 0 ? 'approved' : 'reviewed',
-        overallGrade: monthlyAvg,
-        supervisorComments: totalMissing > 0
-          ? `Attention required: ${totalMissing} daily submission(s) flagged as missing.`
-          : 'Outstanding daily diligence and comprehensive weekly updates.',
-      });
-    });
-
-    return months;
-  })();
+  // Monthly reports are no longer auto-aggregated; they only exist
+  // when a student explicitly uploads one.
+  const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
 
   return (
     <DataContext.Provider
@@ -1396,6 +1330,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         assignStudentLocation,
         submitDailyLocationCheckIn,
         addDailyReport,
+        addWeeklyReport,
+        addMonthlyReport,
         reviewDailyReport,
       }}
     >

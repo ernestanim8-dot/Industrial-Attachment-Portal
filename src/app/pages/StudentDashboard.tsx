@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Link } from 'react-router';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
@@ -26,7 +26,8 @@ export function StudentDashboard() {
   const { user } = useAuth();
   const {
     reports, students, addReport, submitDailyLocationCheckIn,
-    dailyReports, weeklyUpdates, monthlyReports, missingDailyReports, addDailyReport
+    dailyReports, weeklyUpdates, monthlyReports, missingDailyReports, addDailyReport,
+    addWeeklyReport, addMonthlyReport
   } = useData();
 
   // Weekly attachment report upload
@@ -51,7 +52,62 @@ export function StudentDashboard() {
   const [dailyHours, setDailyHours] = useState(8);
   const [dailyTools, setDailyTools] = useState('');
 
-  const [reportToPrint, setReportToPrint] = useState<Report | null>(null);
+  // Weekly/Monthly Report Upload State
+  const [isPeriodicUploadOpen, setIsPeriodicUploadOpen] = useState(false);
+  const [periodicKind, setPeriodicKind] = useState<'weekly' | 'monthly'>('weekly');
+  const [periodicWeek, setPeriodicWeek] = useState(1);
+  const [periodicMonth, setPeriodicMonth] = useState(1);
+  const [periodicTitle, setPeriodicTitle] = useState('');
+  const [periodicSummary, setPeriodicSummary] = useState('');
+
+  const handlePeriodicSubmit = () => {
+    const sId = studentData?.id || user?.id || 'student1';
+    if (!periodicTitle.trim()) {
+      toast.error('Please provide a report title.');
+      return;
+    }
+    if (!periodicSummary.trim()) {
+      toast.error('Please provide a summary of your work.');
+      return;
+    }
+
+    if (periodicKind === 'weekly') {
+      addWeeklyReport({
+        studentId: sId,
+        weekNumber: periodicWeek,
+        monthNumber: periodicMonth,
+        startDate: '',
+        endDate: '',
+        dailyReports: [],
+        missingDaysCount: 0,
+        submittedDaysCount: 0,
+        totalHoursWorked: 0,
+        summaryHighlights: periodicSummary,
+        status: 'complete',
+      });
+    } else {
+      addMonthlyReport({
+        studentId: sId,
+        monthNumber: periodicMonth,
+        monthName: `Month ${periodicMonth}`,
+        startDate: '',
+        endDate: '',
+        weeks: [],
+        totalDailyReportsSubmitted: 0,
+        totalDailyReportsMissing: 0,
+        totalHoursLogged: 0,
+        complianceRate: 100,
+        executiveSummary: periodicSummary,
+        status: 'generated',
+      });
+    }
+
+    setIsPeriodicUploadOpen(false);
+    setPeriodicTitle('');
+    setPeriodicSummary('');
+  };
+
+  const [reportToPrint] = useState<Report | null>(null);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
 
   // Daily Work Location Check-In States
@@ -503,7 +559,7 @@ export function StudentDashboard() {
                 </Badge>
               </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Submit daily work logs. Daily reports automatically roll up into weekly updates and generate your monthly report.
+                Submit daily work logs. Weekly updates and monthly reports appear here only when you upload them.
               </p>
             </div>
 
@@ -522,7 +578,7 @@ export function StudentDashboard() {
                       Daily Work Report Submission
                     </DialogTitle>
                     <DialogDescription>
-                      Log your daily tasks, hours worked, and skills acquired for today's work shift.
+                      Submit daily work logs. Weekly updates and monthly reports appear here only when you upload them.
                     </DialogDescription>
                   </DialogHeader>
 
@@ -668,9 +724,102 @@ export function StudentDashboard() {
                     </div>
 
                     <Button type="submit" className="w-full btn-primary h-11 rounded-xl">
-                      Save & Roll Up Daily Report
+                      Save Daily Report
                     </Button>
                   </form>
+                </DialogContent>
+              </Dialog>
+
+              {/* Weekly/Monthly Report Upload Dialog */}
+              <Dialog open={isPeriodicUploadOpen} onOpenChange={setIsPeriodicUploadOpen}>
+                <DialogTrigger asChild>
+                  <Button className="btn-primary gap-2 h-10 px-4 rounded-xl text-xs font-semibold shadow-xs">
+                    <Upload className="w-4 h-4" /> Upload Weekly/Monthly Report
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-lg rounded-2xl">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Upload className="w-5 h-5 text-primary" />
+                      Upload Weekly / Monthly Report
+                    </DialogTitle>
+                    <DialogDescription>
+                      Manually upload your weekly update or monthly report. It will appear in the matching tab below.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4 pt-2">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        type="button"
+                        variant={periodicKind === 'weekly' ? 'default' : 'outline'}
+                        onClick={() => setPeriodicKind('weekly')}
+                        className="h-10 rounded-xl text-xs font-semibold"
+                      >
+                        Weekly Report
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={periodicKind === 'monthly' ? 'default' : 'outline'}
+                        onClick={() => setPeriodicKind('monthly')}
+                        className="h-10 rounded-xl text-xs font-semibold"
+                      >
+                        Monthly Report
+                      </Button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {periodicKind === 'weekly' && (
+                        <div className="space-y-1.5">
+                          <Label htmlFor="pWeek">Week No.</Label>
+                          <select
+                            id="pWeek"
+                            value={periodicWeek}
+                            onChange={e => setPeriodicWeek(Number(e.target.value))}
+                            className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
+                          >
+                            {[1, 2, 3, 4].map(w => <option key={w} value={w}>Week {w}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div className="space-y-1.5">
+                        <Label htmlFor="pMonth">Month</Label>
+                        <select
+                          id="pMonth"
+                          value={periodicMonth}
+                          onChange={e => setPeriodicMonth(Number(e.target.value))}
+                          className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
+                        >
+                          {[1, 2, 3].map(m => <option key={m} value={m}>Month {m}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pTitle">Report Title</Label>
+                      <Input
+                        id="pTitle"
+                        placeholder="e.g. Week 3 Attachment Summary"
+                        value={periodicTitle}
+                        onChange={e => setPeriodicTitle(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="pSummary">Summary of Work Done</Label>
+                      <Textarea
+                        id="pSummary"
+                        rows={4}
+                        placeholder="Summarize the work completed during this period..."
+                        value={periodicSummary}
+                        onChange={e => setPeriodicSummary(e.target.value)}
+                      />
+                    </div>
+
+                    <Button type="button" onClick={handlePeriodicSubmit} className="w-full btn-primary h-11 rounded-xl">
+                      Upload Report
+                    </Button>
+                  </div>
                 </DialogContent>
               </Dialog>
 
@@ -827,11 +976,11 @@ export function StudentDashboard() {
                 )}
               </TabsContent>
 
-              {/* 2. WEEKLY UPDATES TAB (AUTO-ROLLED UP) */}
+              {/* 2. WEEKLY UPDATES TAB (ONLY WHEN UPLOADED) */}
               <TabsContent value="weekly" className="space-y-3 mt-0">
                 {currentWeeklyUpdates.length === 0 ? (
                   <div className="text-center py-10 text-muted-foreground text-sm">
-                    No weekly updates aggregated yet.
+                    No weekly updates uploaded yet.
                   </div>
                 ) : (
                   <div className="grid gap-3">
@@ -879,11 +1028,11 @@ export function StudentDashboard() {
                 )}
               </TabsContent>
 
-              {/* 3. MONTHLY REPORTS TAB (AUTO-ROLLED UP) */}
+              {/* 3. MONTHLY REPORTS TAB (ONLY WHEN UPLOADED) */}
               <TabsContent value="monthly" className="space-y-3 mt-0">
                 {currentMonthlyReports.length === 0 ? (
                   <div className="text-center py-10 text-muted-foreground text-sm">
-                    No monthly reports aggregated yet.
+                    No monthly reports uploaded yet.
                   </div>
                 ) : (
                   <div className="grid gap-3">
