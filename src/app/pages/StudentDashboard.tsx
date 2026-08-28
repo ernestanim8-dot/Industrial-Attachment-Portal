@@ -491,37 +491,15 @@ export function StudentDashboard() {
               <Link
                 key={item.href}
                 to={item.href}
-                className="bg-white border border-gray-200 rounded-lg p-5 shadow-sm hover:border-[#104e8b] transition-colors flex flex-col justify-start min-h-[140px]"
+                className="bg-card border border-border rounded-lg p-5 shadow-sm hover:border-primary transition-colors flex flex-col justify-start min-h-[140px]"
               >
-                <Icon className="w-7 h-7 text-gray-600 mb-3" />
-                <h3 className="text-[#104e8b] font-semibold text-sm mb-1.5">{item.label}</h3>
-                <p className="text-gray-500 text-xs leading-relaxed">{item.description}</p>
+                <Icon className="w-7 h-7 text-muted-foreground mb-3" />
+                <h3 className="text-primary font-semibold text-sm mb-1.5">{item.label}</h3>
+                <p className="text-muted-foreground text-xs leading-relaxed">{item.description}</p>
               </Link>
             );
           })}
         </div>
-
-        {studentData && (
-          <div className="card-clean rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-foreground">Attachment Details</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {[
-                { label: 'Company', value: studentData.company || 'Not assigned' },
-                { label: 'Department', value: studentData.department || 'N/A' },
-                { label: 'Start Date', value: studentData.attachmentStartDate ? new Date(studentData.attachmentStartDate).toLocaleDateString() : 'Not set' },
-                { label: 'End Date', value: studentData.attachmentEndDate ? new Date(studentData.attachmentEndDate).toLocaleDateString() : 'Not set' },
-              ].map(item => (
-                <div key={item.label} className="bg-secondary rounded-lg p-3">
-                  <p className="text-xs text-muted-foreground font-medium mb-0.5">{item.label}</p>
-                  <p className="text-sm font-semibold text-foreground">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* ═══════════════════════════════════════════════════════════ */}
         {/* MY REPORTS: DAILY, WEEKLY, MONTHLY & MISSING REPORTS */}

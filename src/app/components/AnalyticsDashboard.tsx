@@ -88,7 +88,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">{students.length}</div>
-            <p className="text-xs text-gray-600">Active attachments</p>
+            <p className="text-xs text-muted-foreground">Active attachments</p>
           </CardContent>
         </Card>
 
@@ -99,7 +99,7 @@ export function AnalyticsDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl">{reports.length}</div>
-            <p className="text-xs text-gray-600">All submissions</p>
+            <p className="text-xs text-muted-foreground">All submissions</p>
           </CardContent>
         </Card>
 
@@ -117,7 +117,7 @@ export function AnalyticsDashboard() {
                   )
                 : 0}
             </div>
-            <p className="text-xs text-gray-600">Out of 100</p>
+            <p className="text-xs text-muted-foreground">Out of 100</p>
           </CardContent>
         </Card>
 
@@ -130,7 +130,7 @@ export function AnalyticsDashboard() {
             <div className="text-2xl">
               {Math.round((students.reduce((sum, s) => sum + s.progress, 0) / students.length) || 0)}%
             </div>
-            <p className="text-xs text-gray-600">Average progress</p>
+            <p className="text-xs text-muted-foreground">Average progress</p>
           </CardContent>
         </Card>
       </div>

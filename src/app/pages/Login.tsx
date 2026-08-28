@@ -121,8 +121,8 @@ export const Login = (): React.ReactElement => {
   // ── OTP verification screen ─────────────────────────────────────────────
   if (otpChallenge) {
     return (
-      <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center p-3 sm:p-4">
-        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-border p-5 sm:p-8 md:p-10">
+      <div className="min-h-screen bg-background flex items-center justify-center p-3 sm:p-4">
+        <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border p-5 sm:p-8 md:p-10">
           <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
               <Smartphone className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />

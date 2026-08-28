@@ -45,7 +45,7 @@ export function NotificationCenter() {
       case 'feedback':
         return 'bg-orange-100 text-orange-700';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-muted text-foreground';
     }
   };
 
@@ -99,7 +99,7 @@ export function NotificationCenter() {
         </SheetHeader>
         <ScrollArea className="h-[calc(100vh-100px)] mt-4">
           {notifications.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-muted-foreground">
               <Bell className="w-12 h-12 mx-auto mb-2 opacity-50" />
               <p>No notifications</p>
             </div>
@@ -141,12 +141,12 @@ export function NotificationCenter() {
                           )}
                         </div>
                         <div className="flex items-center justify-between mt-1">
-                          <span className="text-xs text-gray-400">
+                          <span className="text-xs text-muted-foreground/70">
                             {formatDate(notification.createdAt)}
                           </span>
                           {notification.link && (
-                            <Link 
-                              to={notification.link} 
+                            <Link
+                              to={notification.link}
                               className="text-xs text-blue-600 hover:underline"
                               onClick={() => {
                                 markAsRead(notification.id || notification._id || '');

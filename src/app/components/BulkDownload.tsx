@@ -101,7 +101,7 @@ ${'='.repeat(80)}
 
         <div className="flex-1 overflow-auto">
           {/* Select All */}
-          <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg mb-3">
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg mb-3">
             <Checkbox
               id="select-all"
               checked={selectedReports.length === reports.length}
@@ -123,7 +123,7 @@ ${'='.repeat(80)}
                 className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
                   selectedReports.includes(report.id)
                     ? 'bg-blue-50 border-blue-200'
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
+                    : 'bg-card border-border hover:bg-accent/50'
                 }`}
               >
                 <Checkbox
@@ -136,16 +136,16 @@ ${'='.repeat(80)}
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <p className="text-sm font-medium">{report.title}</p>
-                      <p className="text-xs text-gray-600">
+                      <p className="text-xs text-muted-foreground">
                         {report.studentName} • Week {report.weekNumber || 'N/A'}
                       </p>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {report.fileSize}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(report.submittedDate).toLocaleDateString()}
                     </span>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${
@@ -165,7 +165,7 @@ ${'='.repeat(80)}
         </div>
 
         <div className="flex items-center justify-between pt-4 border-t mt-4">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-muted-foreground">
             {selectedReports.length} report(s) selected
           </p>
           <div className="flex gap-2">

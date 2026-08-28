@@ -66,7 +66,7 @@ export function ProgressTimeline() {
             <span className="text-sm">Overall Progress</span>
             <span className="text-sm">{studentData?.progress || 0}%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
+          <div className="w-full bg-muted rounded-full h-3">
             <div
               className="bg-blue-600 h-3 rounded-full transition-all duration-500"
               style={{ width: `${studentData?.progress || 0}%` }}
@@ -82,18 +82,18 @@ export function ProgressTimeline() {
               className={`p-3 rounded-lg border-2 ${
                 milestone.reached
                   ? 'bg-green-50 border-green-600'
-                  : 'bg-gray-50 border-gray-300'
+                  : 'bg-muted border-border'
               }`}
             >
               <div className="flex items-center gap-2 mb-1">
                 {milestone.reached ? (
                   <CheckCircle className="w-4 h-4 text-green-600" />
                 ) : (
-                  <Circle className="w-4 h-4 text-gray-400" />
+                  <Circle className="w-4 h-4 text-muted-foreground/50" />
                 )}
                 <span className="text-xs font-medium">Week {milestone.week}</span>
               </div>
-              <p className="text-xs text-gray-700">{milestone.title}</p>
+              <p className="text-xs text-foreground">{milestone.title}</p>
             </div>
           ))}
         </div>
@@ -115,14 +115,14 @@ export function ProgressTimeline() {
                   </div>
 
                   <div className="flex-1 pb-6">
-                    <div className="bg-gray-50 rounded-lg p-4 border">
+                    <div className="bg-muted rounded-lg p-4 border border-border">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <FileText className="w-4 h-4 text-gray-600" />
+                            <FileText className="w-4 h-4 text-muted-foreground" />
                             <h4 className="text-sm">{item.title}</h4>
                           </div>
-                          <p className="text-xs text-gray-600">
+                          <p className="text-xs text-muted-foreground">
                             Week {item.week} • {new Date(item.date).toLocaleDateString()}
                           </p>
                         </div>
@@ -142,7 +142,7 @@ export function ProgressTimeline() {
                       {item.grade !== undefined && (
                         <div className="mt-2 pt-2 border-t">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-gray-600">Grade:</span>
+                            <span className="text-xs text-muted-foreground">Grade:</span>
                             <span className="text-sm font-medium text-green-600">
                               {item.grade}/100
                             </span>
@@ -152,7 +152,7 @@ export function ProgressTimeline() {
 
                       {item.feedback && (
                         <div className="mt-2 pt-2 border-t">
-                          <p className="text-xs text-gray-700 italic">"{item.feedback}"</p>
+                          <p className="text-xs text-foreground italic">"{item.feedback}"</p>
                         </div>
                       )}
                     </div>
@@ -161,8 +161,8 @@ export function ProgressTimeline() {
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
               <p>No reports submitted yet</p>
               <p className="text-sm mt-1">Start by submitting your first report</p>
             </div>

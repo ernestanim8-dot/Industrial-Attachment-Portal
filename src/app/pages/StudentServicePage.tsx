@@ -176,7 +176,7 @@ export function StudentServicePage() {
   };
 
   const renderAttachmentLetterForm = () => (
-    <div className="card-clean rounded-xl overflow-hidden shadow-sm border border-border bg-white">
+    <div className="card-clean rounded-xl overflow-hidden shadow-sm border border-border">
       {/* Title & Preview Header */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <h2 className="text-lg font-bold text-foreground">Industrial Liaison Attachment</h2>
@@ -341,7 +341,7 @@ export function StudentServicePage() {
               aria-label="I agree to terms and conditions"
               checked={letterFields.agreedToTerms}
               onChange={e => setLetterFields(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-blue-600 cursor-pointer"
+              className="mt-0.5 h-4 w-4 rounded accent-[var(--primary)] cursor-pointer"
             />
             <Label htmlFor="al-agreedToTerms" className="leading-snug cursor-pointer select-none">
               I have read, understood, and agree to the conditions of requesting an Introductory Attachment Letter.
@@ -786,7 +786,7 @@ export function StudentServicePage() {
               aria-label="I agree to terms and conditions"
               checked={fields.agreedToTerms}
               onChange={e => setField('agreedToTerms', e.target.checked)}
-              className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-blue-600"
+              className="mt-0.5 h-4 w-4 rounded accent-[var(--primary)]"
             />
             <Label htmlFor="af-agreedToTerms" className="leading-snug cursor-pointer">
               I have read, understood, and agree to the terms and conditions of the Industrial Liaison
@@ -832,7 +832,7 @@ export function StudentServicePage() {
   );
   const renderLogBookPaymentForm = () => (
     <div className="space-y-6">
-      <div className="card-clean rounded-xl p-6 bg-white border border-border space-y-4">
+      <div className="card-clean rounded-xl p-6 border border-border space-y-4">
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div>
             <h3 className="text-lg font-bold text-foreground">Industrial Attachment Log Book Fee</h3>

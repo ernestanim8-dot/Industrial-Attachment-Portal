@@ -40,12 +40,12 @@ export function DocumentPreview({ report, isOpen, onClose }: DocumentPreviewProp
 
         <div className="flex-1 overflow-auto">
           {/* Document Preview Area */}
-          <div className="bg-gray-50 rounded-lg p-6 min-h-[400px]">
+          <div className="bg-muted rounded-lg p-6 min-h-[400px]">
             {/* Mock PDF Preview */}
             <div className="bg-white shadow-lg rounded p-8 max-w-3xl mx-auto">
               <div className="border-b pb-4 mb-4">
                 <h1 className="text-2xl mb-2">{report.title}</h1>
-                <div className="text-sm text-gray-600 space-y-1">
+                <div className="text-sm text-muted-foreground space-y-1">
                   <p>Student: {report.studentName}</p>
                   <p>Submitted: {new Date(report.submittedDate).toLocaleDateString()}</p>
                   {report.weekNumber && <p>Week: {report.weekNumber}</p>}
@@ -54,10 +54,10 @@ export function DocumentPreview({ report, isOpen, onClose }: DocumentPreviewProp
 
               <div className="prose max-w-none">
                 <h2 className="text-lg mb-3">Report Description</h2>
-                <p className="text-gray-700 leading-relaxed">{report.description}</p>
+                <p className="text-muted-foreground leading-relaxed">{report.description}</p>
 
                 {/* Mock Content */}
-                <div className="mt-6 space-y-4 text-gray-700">
+                <div className="mt-6 space-y-4 text-muted-foreground">
                   <h3 className="text-base">Activities Completed</h3>
                   <ul className="list-disc pl-5 space-y-2">
                     <li>Attended orientation and safety training sessions</li>
@@ -89,7 +89,7 @@ export function DocumentPreview({ report, isOpen, onClose }: DocumentPreviewProp
               </div>
 
               {/* Footer */}
-              <div className="mt-8 pt-4 border-t text-sm text-gray-500">
+              <div className="mt-8 pt-4 border-t border-border text-sm text-muted-foreground">
                 <p>File: {report.fileName} ({report.fileSize})</p>
               </div>
             </div>
@@ -97,7 +97,7 @@ export function DocumentPreview({ report, isOpen, onClose }: DocumentPreviewProp
         </div>
 
         <div className="flex justify-between items-center pt-4 border-t">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-muted-foreground">
             {report.status === 'graded' && report.grade && (
               <span className="font-medium text-green-600">Grade: {report.grade}/100</span>
             )}

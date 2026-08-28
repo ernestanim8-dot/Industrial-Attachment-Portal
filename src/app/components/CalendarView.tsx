@@ -108,7 +108,7 @@ export function CalendarView() {
                 {selectedDateEvents.map((event, index) => (
                   <div
                     key={index}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-muted rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       {event.submitted ? (
@@ -121,7 +121,7 @@ export function CalendarView() {
                       <div>
                         <p className="text-sm">{event.studentName} - Week {event.week}</p>
                         {event.report && (
-                          <p className="text-xs text-gray-600">{event.report.title}</p>
+                          <p className="text-xs text-muted-foreground">{event.report.title}</p>
                         )}
                       </div>
                     </div>
@@ -155,12 +155,12 @@ export function CalendarView() {
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
                       <p className="text-sm">{deadline.studentName}</p>
-                      <p className="text-xs text-gray-600">Week {deadline.week} Report</p>
+                      <p className="text-xs text-muted-foreground">Week {deadline.week} Report</p>
                     </div>
                     <AlertCircle className="w-4 h-4 text-orange-600 mt-0.5" />
                   </div>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-600">
+                    <span className="text-muted-foreground">
                       {format(deadline.date, 'MMM d, yyyy')}
                     </span>
                     <Badge variant="secondary" className="text-xs">
@@ -170,7 +170,7 @@ export function CalendarView() {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-8 text-muted-foreground">
                 <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-600" />
                 <p className="text-sm">No upcoming deadlines</p>
               </div>
