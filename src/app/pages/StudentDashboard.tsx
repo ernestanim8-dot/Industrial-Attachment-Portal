@@ -170,10 +170,10 @@ export function StudentDashboard() {
   ];
 
   const stats = [
-    { label: 'Progress', value: `${studentData?.progress || 0}%`, icon: Activity, gradient: 'bg-[#6374f6]', extra: <div className="mt-4"><Progress value={studentData?.progress || 0} className="h-1.5 bg-white/30 [&>*]:bg-white" /></div> },
-    { label: 'No.of Reports Uploaded', value: levelRequirementsStats.completed, icon: FileText, gradient: 'bg-[#9851f5]', extra: <div className="text-[11px] text-white/80 mt-1 font-medium">{levelRequirementsStats.completed} of {levelRequirementsStats.requiredMax} required uploaded</div> },
-    { label: 'No.of Reports Graded', value: gradedReports.length, icon: CheckCircle, gradient: 'bg-[#00a86b]', extra: null },
-    { label: 'Remark/Comment', value: avgGrade > 0 ? `${avgGrade}%` : 'N/A', icon: Star, gradient: 'bg-[#f48c06]', extra: null },
+    { label: 'Progress', value: `${studentData?.progress || 0}%`, icon: Activity, gradient: 'stat-card-blue', extra: <div className="mt-4"><Progress value={studentData?.progress || 0} className="h-1.5 bg-white/30 [&>*]:bg-white" /></div> },
+    { label: 'No.of Reports Uploaded', value: levelRequirementsStats.completed, icon: FileText, gradient: 'stat-card-violet', extra: <div className="text-[11px] text-white/80 mt-1 font-medium">{levelRequirementsStats.completed} of {levelRequirementsStats.requiredMax} required uploaded</div> },
+    { label: 'No.of Reports Graded', value: gradedReports.length, icon: CheckCircle, gradient: 'stat-card-green', extra: null },
+    { label: 'Remark/Comment', value: avgGrade > 0 ? `${avgGrade}%` : 'N/A', icon: Star, gradient: 'stat-card-amber', extra: null },
   ];
 
   return (

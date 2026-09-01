@@ -1160,7 +1160,7 @@ export function StudentServicePage() {
                 value={logBookReceiptNo}
                 onChange={e => setLogBookReceiptNo(e.target.value)}
                 required
-                className="h-11 bg-[#f9fafb]"
+                className="h-11 bg-input-background"
               />
               <p className="text-xs text-muted-foreground">
                 Pay via TTU MoMo Shortcode (*170#) or Bank Teller and paste transaction ID here.

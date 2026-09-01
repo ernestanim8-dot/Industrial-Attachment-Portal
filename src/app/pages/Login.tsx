@@ -9,6 +9,7 @@ import {
 } from '../components/ui/select';
 import { useAuth, OtpChallenge } from '../context/AuthContext';
 import { UserRole } from '../types';
+import { ThemeToggle } from '../components/ThemeToggle';
 import ttuLogo from '../../assets/TTU LOGO.png';
 
 export const Login = (): React.ReactElement => {
@@ -199,8 +200,11 @@ export const Login = (): React.ReactElement => {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8fc] flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl grid lg:grid-cols-2 bg-white rounded-2xl shadow-xl overflow-hidden border border-border">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+      <div className="w-full max-w-4xl grid lg:grid-cols-2 bg-card rounded-2xl shadow-xl overflow-hidden border border-border">
 
         {/* ── Left panel ── */}
         <div className="relative hidden lg:flex flex-col justify-between p-10 overflow-hidden bg-gradient-to-br from-[#1e2130] to-[#2a3158]">
@@ -259,7 +263,7 @@ export const Login = (): React.ReactElement => {
             <div className="space-y-1.5">
               <Label htmlFor="login-role">I am a</Label>
               <Select value={loginRole} onValueChange={v => setLoginRole(v as UserRole)}>
-                <SelectTrigger id="login-role" className="h-11 bg-[#f9fafb]">
+                <SelectTrigger id="login-role" className="h-11 bg-input-background">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -286,7 +290,7 @@ export const Login = (): React.ReactElement => {
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
                 required
-                className="h-11 bg-[#f9fafb]"
+                className="h-11 bg-input-background"
               />
             </div>
 
@@ -300,7 +304,7 @@ export const Login = (): React.ReactElement => {
                   value={loginPassword}
                   onChange={e => setLoginPassword(e.target.value)}
                   required
-                  className="h-11 bg-[#f9fafb] pr-10"
+                  className="h-11 bg-input-background pr-10"
                 />
                 <button
                   type="button"
