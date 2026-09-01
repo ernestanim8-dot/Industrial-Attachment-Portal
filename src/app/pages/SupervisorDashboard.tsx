@@ -33,10 +33,6 @@ export function SupervisorDashboard() {
   const [isDailyReviewModalOpen, setIsDailyReviewModalOpen] = useState(false);
   const [dailyReviewFeedback, setDailyReviewFeedback] = useState('');
   const [dailyReviewGrade, setDailyReviewGrade] = useState('');
-  const [reportStatusFilter, setReportStatusFilter] = useState('all');
-  const [reportDateFilter, setReportDateFilter] = useState('');
-  const [reportWeekFilter, setReportWeekFilter] = useState('');
-  const [reportMonthFilter, setReportMonthFilter] = useState('');
 
   const [attendance, setAttendance] = useState('');
   const [performance, setPerformance] = useState('');
@@ -56,54 +52,6 @@ export function SupervisorDashboard() {
   const reviewedReports = supervisorReports.filter(r => r.status === 'reviewed');
   const gradedReports = supervisorReports.filter(r => r.status === 'graded');
 
-
-  const getFilteredSubmissionRows = (student: Student) => {
-    const rows = [
-      ...dailyReports
-        .filter(report => report.studentId === student.id)
-        .map(report => ({
-          id: report.id,
-          date: report.date,
-          dayOfWeek: report.dayOfWeek,
-          title: report.title,
-          weekNumber: report.weekNumber,
-          monthNumber: report.monthNumber,
-          status: report.status === 'late' ? 'late' : 'submitted',
-        })),
-      ...missingDailyReports
-        .filter(report => report.studentId === student.id)
-        .map(report => ({
-          id: report.id,
-          date: report.date,
-          dayOfWeek: report.dayOfWeek,
-          title: report.status === 'late_submitted' ? 'Late report submitted after missing mark' : 'Daily report not submitted',
-          weekNumber: report.weekNumber,
-          monthNumber: report.monthNumber,
-          status: report.status === 'late_submitted' ? 'late' : 'missing',
-        })),
-    ];
-
-    const today = new Date().toISOString().split('T')[0];
-    if (!rows.some(row => row.date === today)) {
-      const date = new Date(`${today}T00:00:00`);
-      rows.push({
-        id: `pending-${student.id}-${today}`,
-        date: today,
-        dayOfWeek: date.toLocaleDateString('default', { weekday: 'long' }),
-        title: 'Daily report required today',
-        weekNumber: Math.ceil((((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / 86400000) + new Date(date.getFullYear(), 0, 1).getDay() + 1) / 7),
-        monthNumber: date.getMonth() + 1,
-        status: 'pending',
-      });
-    }
-
-    return rows
-      .filter(row => reportStatusFilter === 'all' || row.status === reportStatusFilter)
-      .filter(row => !reportDateFilter || row.date === reportDateFilter)
-      .filter(row => !reportWeekFilter || row.weekNumber === Number(reportWeekFilter))
-      .filter(row => !reportMonthFilter || row.monthNumber === Number(reportMonthFilter))
-      .sort((a, b) => b.date.localeCompare(a.date));
-  };
   const handleExportCSV = async () => {
     try {
       setIsExporting(true);
@@ -130,7 +78,7 @@ export function SupervisorDashboard() {
     e.preventDefault();
     if (!selectedReport) return;
     const overallGrade = Math.round(
-      (parseFloat(attendance) + parseFloat(performance) + parseFloat(reportQuality) + parseFloat(professionalism)) / 4
+      (parseFloat(attendance || '0') + parseFloat(performance || '0') + parseFloat(reportQuality || '0') + parseFloat(professionalism || '0')) / 4
     );
     updateReport(selectedReport.id, { status: 'graded', grade: overallGrade, feedback });
     toast.success('Report graded successfully!');

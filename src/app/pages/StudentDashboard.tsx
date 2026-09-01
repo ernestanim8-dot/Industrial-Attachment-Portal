@@ -163,8 +163,8 @@ export function StudentDashboard() {
   }, [studentData, reports, isUserReport]);
 
   const dashboardCards = [
-    { label: 'Log Book Payment', description: 'Pay for your industrial attachment log book and check payment status.', icon: CreditCard, href: '/student/services/fee-payments' },
     { label: 'Daily report log', description: 'View and submit your daily work logs, weekly updates, and monthly reports.', icon: FolderKanban, href: '/student/daily-report-log' },
+    { label: 'Log Book Payment', description: 'Pay for your industrial attachment log book and check payment status.', icon: CreditCard, href: '/student/services/fee-payments' },
     { label: 'Attachment Letter', description: 'Generate and print your industrial attachment request letters.', icon: FileOutput, href: '/student/services/attachment-letter' },
     { label: 'Assumption Form', description: 'Submit your assumption of duty forms for attachment.', icon: ClipboardCheck, href: '/student/services/assumption-form' },
   ];

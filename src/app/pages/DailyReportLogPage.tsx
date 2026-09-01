@@ -142,8 +142,9 @@ export function DailyReportLogPage() {
       return;
     }
 
+    const todayStr = new Date().toISOString().split('T')[0];
     const date = new Date(`${dailyDate}T00:00:00`);
-    const isLate = dailyDate < today || new Date().getHours() >= 17;
+    const isLate = dailyDate < todayStr || (dailyDate === todayStr && new Date().getHours() >= 17);
 
     addDailyReport({
       studentId: studentData.id,

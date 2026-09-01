@@ -316,12 +316,12 @@ export function StudentServicePage() {
                 { key: 'submitted',     label: 'Submitted',     icon: '⬤' },
                 { key: 'pdf_generated', label: 'PDF Generated', icon: '⬤' },
                 { key: 'verified',      label: 'Verified',      icon: '✓' },
-              ].map((s, i) => {
+              ].map((s) => {
                 const statuses = ['not_submitted', 'submitted', 'pdf_generated', 'verified', 'approved'];
                 const currentIdx = statuses.indexOf(existingLetter.status);
                 const stepIdx = statuses.indexOf(s.key);
                 const isActive = currentIdx >= stepIdx;
-                const isCurrent = s.key === existingLetter.status || (s.key === 'pdf_generated' && existingLetter.status === 'submitted' && existingLetter.pdfGeneratedAt);
+                const isCurrent = s.key === existingLetter.status || (s.key === 'pdf_generated' && existingLetter.status === 'submitted' && !!existingLetter.pdfGeneratedAt);
 
                 return (
                   <div
@@ -330,7 +330,7 @@ export function StudentServicePage() {
                       isActive
                         ? 'bg-primary/10 border-primary/30 text-primary font-bold'
                         : 'bg-secondary/30 border-border text-muted-foreground'
-                    }`}
+                    } ${isCurrent ? 'ring-2 ring-primary/40 ring-offset-1' : ''}`}
                   >
                     <span className="text-base leading-none">{s.icon}</span>
                     <span className="leading-tight">{s.label}</span>
