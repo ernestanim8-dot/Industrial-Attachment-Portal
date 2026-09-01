@@ -97,6 +97,13 @@ export interface Supervisor extends User {
   assignedStudents: string[];
 }
 
+export interface ActivityItem {
+  id?: string;
+  title: string;
+  description?: string;
+  hours?: number;
+}
+
 export interface DailyReport {
   id: string;
   studentId: string;
@@ -107,13 +114,14 @@ export interface DailyReport {
   monthNumber: number;
   monthName: string;
   title: string;
+  activities?: ActivityItem[];
   tasksCompleted: string;
   skillsAcquired?: string;
   challengesFaced?: string;
   hoursWorked: number;
   equipmentOrTools?: string;
   submittedAt: string;
-  status: 'submitted' | 'reviewed' | 'graded' | 'missing';
+  status: 'submitted' | 'reviewed' | 'graded' | 'missing' | 'late' | 'pending';
   feedback?: string;
   grade?: number;
   locationVerified?: boolean;
@@ -127,6 +135,7 @@ export interface WeeklyReportUpdate {
   startDate: string;
   endDate: string;
   dailyReports: DailyReport[];
+  activities?: ActivityItem[];
   missingDaysCount: number;
   submittedDaysCount: number; // e.g. 4/5
   totalHoursWorked: number;
@@ -236,19 +245,39 @@ export interface AssumptionSubmission {
   studentSignature: string;
 }
 
+export type AttachmentLetterStatus =
+  | 'not_submitted'
+  | 'submitted'
+  | 'pdf_generated'
+  | 'verified'
+  | 'pending'
+  | 'approved'
+  | 'rejected';
+
 export interface AttachmentLetterSubmission {
   id: string;
   studentId: string;
   studentName: string;
+  studentRegNo?: string;
+  studentPhone?: string;
   department: string;
+  academicLevel?: number | string;
   submittedAt: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: AttachmentLetterStatus;
   // Company Information
   companyName: string;
   companyTown: string;
+  companyAddress?: string;
   letterAddressedTo: string;
-  // Agreement
+  startDate?: string;
+  endDate?: string;
+  // Agreement & PDF details
   studentSignature: string;
+  refNumber?: string;
+  pdfGeneratedAt?: string;
+  verifiedAt?: string;
+  verifiedBy?: string;
+  verificationNotes?: string;
 }
 
 export interface DailyLocation {
@@ -259,3 +288,4 @@ export interface DailyLocation {
   longitude: number;
   address?: string;
 }
+

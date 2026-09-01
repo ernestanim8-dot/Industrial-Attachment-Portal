@@ -1,22 +1,21 @@
-﻿import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
 import {
-  Upload, FileText, Activity, Calendar,
+  FileText, Activity,
   CheckCircle, Clock, Star,
   ClipboardCheck, FileOutput,
   CreditCard, MapPin, ShieldCheck, AlertTriangle,
-  Navigation, CheckCircle2, ShieldAlert
+  Navigation, CheckCircle2, ShieldAlert,
+  FolderKanban
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
@@ -25,87 +24,8 @@ import { Report } from '../types';
 export function StudentDashboard() {
   const { user } = useAuth();
   const {
-    reports, students, addReport, submitDailyLocationCheckIn,
-    dailyReports, weeklyUpdates, monthlyReports, missingDailyReports, addDailyReport,
-    addWeeklyReport, addMonthlyReport
+    reports, students, submitDailyLocationCheckIn
   } = useData();
-
-  // Weekly attachment report upload
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [reportTitle, setReportTitle] = useState('');
-  const [reportDescription, setReportDescription] = useState('');
-  const [weekNumber, setWeekNumber] = useState('');
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [fileName, setFileName] = useState('');
-
-  // Daily Report Upload State
-  const [isDailyReportDialogOpen, setIsDailyReportDialogOpen] = useState(false);
-  const [dailyDate, setDailyDate] = useState(new Date().toISOString().split('T')[0]);
-  const [dailyDayOfWeek, setDailyDayOfWeek] = useState('Monday');
-  const [dailyWeekNumber, setDailyWeekNumber] = useState(2);
-  const [dailyMonthNumber, setDailyMonthNumber] = useState(1);
-  const [dailyTitle, setDailyTitle] = useState('');
-  const [dailyTasks, setDailyTasks] = useState('');
-  const [dailySkills, setDailySkills] = useState('');
-  const [dailyChallenges, setDailyChallenges] = useState('');
-  const [dailyHours, setDailyHours] = useState(8);
-  const [dailyTools, setDailyTools] = useState('');
-
-  // Weekly/Monthly Report Upload State
-  const [isPeriodicUploadOpen, setIsPeriodicUploadOpen] = useState(false);
-  const [periodicKind, setPeriodicKind] = useState<'weekly' | 'monthly'>('weekly');
-  const [periodicWeek, setPeriodicWeek] = useState(1);
-  const [periodicMonth, setPeriodicMonth] = useState(1);
-  const [periodicTitle, setPeriodicTitle] = useState('');
-  const [periodicSummary, setPeriodicSummary] = useState('');
-
-  const handlePeriodicSubmit = () => {
-    const sId = studentData?.id || user?.id || 'student1';
-    if (!periodicTitle.trim()) {
-      toast.error('Please provide a report title.');
-      return;
-    }
-    if (!periodicSummary.trim()) {
-      toast.error('Please provide a summary of your work.');
-      return;
-    }
-
-    if (periodicKind === 'weekly') {
-      addWeeklyReport({
-        studentId: sId,
-        weekNumber: periodicWeek,
-        monthNumber: periodicMonth,
-        startDate: '',
-        endDate: '',
-        dailyReports: [],
-        missingDaysCount: 0,
-        submittedDaysCount: 0,
-        totalHoursWorked: 0,
-        summaryHighlights: periodicSummary,
-        status: 'complete',
-      });
-    } else {
-      addMonthlyReport({
-        studentId: sId,
-        monthNumber: periodicMonth,
-        monthName: `Month ${periodicMonth}`,
-        startDate: '',
-        endDate: '',
-        weeks: [],
-        totalDailyReportsSubmitted: 0,
-        totalDailyReportsMissing: 0,
-        totalHoursLogged: 0,
-        complianceRate: 100,
-        executiveSummary: periodicSummary,
-        status: 'generated',
-      });
-    }
-
-    setIsPeriodicUploadOpen(false);
-    setPeriodicTitle('');
-    setPeriodicSummary('');
-  };
 
   const [reportToPrint] = useState<Report | null>(null);
   const [isPrintDialogOpen, setIsPrintDialogOpen] = useState(false);
@@ -132,19 +52,14 @@ export function StudentDashboard() {
     (user?.name && s.name.toLowerCase() === user.name.toLowerCase())
   ) || students[0];
 
-  const isUserReport = (sId?: string, sName?: string) => {
+  const isUserReport = React.useCallback((sId?: string, sName?: string) => {
     if (!sId && !sName) return true;
     if (sId === user?.id || sId === studentData?.id) return true;
     if (sName && user?.name && sName.toLowerCase() === user.name.toLowerCase()) return true;
     if (sName && studentData?.name && sName.toLowerCase() === studentData.name.toLowerCase()) return true;
     if (sId === 'student1' || sId === 'u-stu-1') return true;
     return false;
-  };
-
-  const currentDailyReports = dailyReports.filter(d => isUserReport(d.studentId, d.studentName));
-  const currentWeeklyUpdates = weeklyUpdates.filter(w => isUserReport(w.studentId));
-  const currentMonthlyReports = monthlyReports.filter(m => isUserReport(m.studentId));
-  const currentMissingDailyReports = missingDailyReports.filter(m => isUserReport(m.studentId, m.studentName));
+  }, [user, studentData]);
 
   const studentReports = reports.filter(r => isUserReport(r.studentId, r.studentName));
   const gradedReports = studentReports.filter(r => r.status === 'graded');
@@ -206,63 +121,57 @@ export function StudentDashboard() {
     setWorkNotes('');
   };
 
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files?.[0]) {
-      setSelectedFile(e.target.files[0]);
-      setFileName(e.target.files[0].name);
+  // Level Requirements calculation
+  const levelRequirementsStats = React.useMemo(() => {
+    const studentCurrentLevel = studentData?.currentLevel || 1;
+    const reachedLevels: number[] = [];
+    for (let lvl = 1; lvl <= studentCurrentLevel && lvl <= 4; lvl++) {
+      reachedLevels.push(lvl);
     }
-  };
 
-  const uploadToCloudinary = async (file: File): Promise<string> => {
-    const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'your_cloud_name';
-    const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'your_upload_preset';
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', uploadPreset);
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, { method: 'POST', body: formData });
-    if (!response.ok) throw new Error('Upload failed');
-    const data = await response.json();
-    return data.secure_url;
-  };
+    let requiredMax = 0;
+    let completed = 0;
 
-  const handleSubmitReport = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) { toast.error('Please select a file to upload'); return; }
-    setIsUploading(true);
-    try {
-      const fileUrl = await uploadToCloudinary(selectedFile);
-      await addReport({
-        studentId: user?.id || studentData?.id || '',
-        studentName: user?.name || '',
-        title: reportTitle,
-        description: reportDescription,
-        weekNumber: weekNumber ? parseInt(weekNumber) : undefined,
-        fileName,
-        fileSize: `${Math.round(selectedFile.size / 1024)} KB`,
-        fileUrl,
-      });
-      toast.success('Report submitted successfully!');
-      setIsUploadDialogOpen(false);
-      setReportTitle(''); setReportDescription(''); setWeekNumber('');
-      setFileName(''); setSelectedFile(null);
-    } catch {
-      toast.error('Failed to upload. Please try again.');
-    } finally {
-      setIsUploading(false);
-    }
-  };
+    reachedLevels.forEach(lvl => {
+      if (lvl === 1) requiredMax += 1; // Level 100: Attachment
+      if (lvl === 2) requiredMax += 1; // Level 200: Attachment
+      if (lvl === 3) requiredMax += 2; // Level 300: Semester Out + Attachment
+      if (lvl === 4) requiredMax += 1; // Level 400: Final Project
 
+      const proj = studentData?.levelProjects?.find(p => p.level === lvl);
+      if (proj && proj.reports && proj.reports.length > 0) {
+        if (lvl === 3) {
+          completed += Math.min(proj.reports.length, 2);
+        } else {
+          completed += 1;
+        }
+      } else {
+        const globalForLevel = reports.filter(r => isUserReport(r.studentId, r.studentName) && (r.level === lvl || (lvl === studentCurrentLevel && !r.level)));
+        if (lvl === 3) {
+          completed += Math.min(globalForLevel.length, 2);
+        } else if (globalForLevel.length > 0) {
+          completed += 1;
+        }
+      }
+    });
+
+    return {
+      completed,
+      requiredMax,
+      display: `${completed} / ${requiredMax}`,
+    };
+  }, [studentData, reports, isUserReport]);
 
   const dashboardCards = [
     { label: 'Log Book Payment', description: 'Pay for your industrial attachment log book and check payment status.', icon: CreditCard, href: '/student/services/fee-payments' },
+    { label: 'Daily report log', description: 'View and submit your daily work logs, weekly updates, and monthly reports.', icon: FolderKanban, href: '/student/daily-report-log' },
     { label: 'Attachment Letter', description: 'Generate and print your industrial attachment request letters.', icon: FileOutput, href: '/student/services/attachment-letter' },
     { label: 'Assumption Form', description: 'Submit your assumption of duty forms for attachment.', icon: ClipboardCheck, href: '/student/services/assumption-form' },
   ];
 
   const stats = [
     { label: 'Progress', value: `${studentData?.progress || 0}%`, icon: Activity, gradient: 'bg-[#6374f6]', extra: <div className="mt-4"><Progress value={studentData?.progress || 0} className="h-1.5 bg-white/30 [&>*]:bg-white" /></div> },
-    { label: 'No.of Reports Uploaded', value: studentReports.length, icon: FileText, gradient: 'bg-[#9851f5]', extra: null },
+    { label: 'No.of Reports Uploaded', value: levelRequirementsStats.completed, icon: FileText, gradient: 'bg-[#9851f5]', extra: <div className="text-[11px] text-white/80 mt-1 font-medium">{levelRequirementsStats.completed} of {levelRequirementsStats.requiredMax} required uploaded</div> },
     { label: 'No.of Reports Graded', value: gradedReports.length, icon: CheckCircle, gradient: 'bg-[#00a86b]', extra: null },
     { label: 'Remark/Comment', value: avgGrade > 0 ? `${avgGrade}%` : 'N/A', icon: Star, gradient: 'bg-[#f48c06]', extra: null },
   ];
@@ -274,7 +183,7 @@ export function StudentDashboard() {
           {stats.map(s => {
             const Icon = s.icon;
             const cardContent = (
-              <div className={`${s.gradient} rounded-2xl p-5 text-white flex flex-col justify-between min-h-[130px]`}>
+              <div className={`${s.gradient} rounded-2xl p-5 text-white flex flex-col justify-between min-h-[130px] transition-all duration-200 hover:shadow-lg hover:scale-[1.01]`}>
                 <div className="flex items-start justify-between">
                   <span className="text-white/90 text-sm font-medium">{s.label}</span>
                   <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -287,7 +196,6 @@ export function StudentDashboard() {
                 </div>
               </div>
             );
-            // Make Progress clickable
             if (s.label === 'Progress') {
               return (
                 <Link key={s.label} to="/student/progress" className="block hover:opacity-95 transition-opacity">
@@ -295,15 +203,14 @@ export function StudentDashboard() {
                 </Link>
               );
             }
-            // Make No.of Reports Uploaded clickable
             if (s.label === 'No.of Reports Uploaded') {
+              const targetPath = user?.role === 'supervisor' ? '/supervisor/your-reports-uploaded' : '/student/your-reports-uploaded';
               return (
-                <Link key={s.label} to="/student/uploaded-reports" className="block hover:opacity-95 transition-opacity">
+                <Link key={s.label} to={targetPath} className="block hover:opacity-95 transition-opacity">
                   {cardContent}
                 </Link>
               );
             }
-            // Make Remark/Comment clickable
             if (s.label === 'Remark/Comment') {
               return (
                 <Link key={s.label} to="/student/grades" className="block hover:opacity-95 transition-opacity">
@@ -400,9 +307,9 @@ export function StudentDashboard() {
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* ----------------------------------------------------------- */}
         {/* WORK-ONLY DAILY LOCATION CHECK-IN DIALOG */}
-        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* ----------------------------------------------------------- */}
         <Dialog open={isCheckInModalOpen} onOpenChange={setIsCheckInModalOpen}>
           <DialogContent className="max-w-lg rounded-2xl">
             <DialogHeader>
@@ -528,14 +435,17 @@ export function StudentDashboard() {
           </DialogContent>
         </Dialog>
 
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* SERVICE CARDS */}
+        {/* ═══════════════════════════════════════════════════════════ */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {dashboardCards.map(item => {
             const Icon = item.icon;
             return (
               <Link
-                key={item.href}
+                key={item.label}
                 to={item.href}
-                className="bg-card border border-border rounded-lg p-5 shadow-sm hover:border-primary transition-colors flex flex-col justify-start min-h-[140px]"
+                className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary transition-colors flex flex-col justify-start min-h-[140px]"
               >
                 <Icon className="w-7 h-7 text-muted-foreground mb-3" />
                 <h3 className="text-primary font-semibold text-sm mb-1.5">{item.label}</h3>
@@ -543,614 +453,6 @@ export function StudentDashboard() {
               </Link>
             );
           })}
-        </div>
-
-        {/* ═══════════════════════════════════════════════════════════ */}
-        {/* MY REPORTS: DAILY, WEEKLY, MONTHLY & MISSING REPORTS */}
-        {/* ═══════════════════════════════════════════════════════════ */}
-        <div className="card-clean rounded-2xl border border-border bg-white dark:bg-card shadow-sm overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 sm:p-6 border-b border-border bg-gradient-to-r from-secondary/40 to-transparent">
-            <div>
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-primary" />
-                <h3 className="font-extrabold text-foreground text-lg">My Reports</h3>
-                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-xs">
-                  Daily • Weekly • Monthly
-                </Badge>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Submit daily work logs. Weekly updates and monthly reports appear here only when you upload them.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Daily Report Upload Dialog */}
-              <Dialog open={isDailyReportDialogOpen} onOpenChange={setIsDailyReportDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-primary gap-2 h-10 px-4 rounded-xl text-xs font-semibold shadow-xs">
-                    <Calendar className="w-4 h-4" /> Submit Daily Report
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg rounded-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-primary" />
-                      Daily Work Report Submission
-                    </DialogTitle>
-                    <DialogDescription>
-                      Submit daily work logs. Weekly updates and monthly reports appear here only when you upload them.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (!dailyTitle || !dailyTasks) {
-                        toast.error('Report title and tasks completed are required.');
-                        return;
-                      }
-
-                      addDailyReport({
-                        studentId: studentData?.id || user?.id || 'student1',
-                        studentName: studentData?.name || user?.name || 'John Doe',
-                        date: dailyDate,
-                        dayOfWeek: dailyDayOfWeek,
-                        weekNumber: dailyWeekNumber,
-                        monthNumber: dailyMonthNumber,
-                        monthName: `Month ${dailyMonthNumber} (${new Date(dailyDate).toLocaleString('default', { month: 'long', year: 'numeric' })})`,
-                        title: dailyTitle,
-                        tasksCompleted: dailyTasks,
-                        skillsAcquired: dailySkills,
-                        challengesFaced: dailyChallenges,
-                        hoursWorked: Number(dailyHours) || 8,
-                        equipmentOrTools: dailyTools,
-                      });
-
-                      setIsDailyReportDialogOpen(false);
-                      setDailyTitle('');
-                      setDailyTasks('');
-                      setDailySkills('');
-                      setDailyChallenges('');
-                      setDailyTools('');
-                    }}
-                    className="space-y-4 pt-2"
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dDate">Date</Label>
-                        <Input
-                          id="dDate"
-                          type="date"
-                          value={dailyDate}
-                          onChange={e => {
-                            setDailyDate(e.target.value);
-                            const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                            const d = new Date(e.target.value);
-                            setDailyDayOfWeek(dayNames[d.getDay()]);
-                          }}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dDay">Day of Week</Label>
-                        <Input id="dDay" value={dailyDayOfWeek} readOnly className="bg-secondary font-medium" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dWeek">Week No.</Label>
-                        <select
-                          id="dWeek"
-                          value={dailyWeekNumber}
-                          onChange={e => setDailyWeekNumber(Number(e.target.value))}
-                          className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
-                        >
-                          <option value={1}>Week 1</option>
-                          <option value={2}>Week 2</option>
-                          <option value={3}>Week 3</option>
-                          <option value={4}>Week 4</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dMonth">Month</Label>
-                        <select
-                          id="dMonth"
-                          value={dailyMonthNumber}
-                          onChange={e => setDailyMonthNumber(Number(e.target.value))}
-                          className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
-                        >
-                          <option value={1}>Month 1</option>
-                          <option value={2}>Month 2</option>
-                          <option value={3}>Month 3</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dHours">Hours Worked</Label>
-                        <Input
-                          id="dHours"
-                          type="number"
-                          min="1"
-                          max="16"
-                          value={dailyHours}
-                          onChange={e => setDailyHours(Number(e.target.value))}
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="dTitle">Daily Activity Title</Label>
-                      <Input
-                        id="dTitle"
-                        placeholder="e.g. Database Indexing & API Endpoint Testing"
-                        value={dailyTitle}
-                        onChange={e => setDailyTitle(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="dTasks">Tasks Completed & Work Highlights</Label>
-                      <Textarea
-                        id="dTasks"
-                        rows={3}
-                        placeholder="Detail specific tasks executed on-site today..."
-                        value={dailyTasks}
-                        onChange={e => setDailyTasks(e.target.value)}
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dSkills">Skills Acquired</Label>
-                        <Input
-                          id="dSkills"
-                          placeholder="e.g. REST API design, Docker"
-                          value={dailySkills}
-                          onChange={e => setDailySkills(e.target.value)}
-                        />
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label htmlFor="dTools">Tools / Equipment</Label>
-                        <Input
-                          id="dTools"
-                          placeholder="e.g. Postman, PostgreSQL"
-                          value={dailyTools}
-                          onChange={e => setDailyTools(e.target.value)}
-                        />
-                      </div>
-                    </div>
-
-                    <Button type="submit" className="w-full btn-primary h-11 rounded-xl">
-                      Save Daily Report
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-
-              {/* Weekly/Monthly Report Upload Dialog */}
-              <Dialog open={isPeriodicUploadOpen} onOpenChange={setIsPeriodicUploadOpen}>
-                <DialogTrigger asChild>
-                  <Button className="btn-primary gap-2 h-10 px-4 rounded-xl text-xs font-semibold shadow-xs">
-                    <Upload className="w-4 h-4" /> Upload Weekly/Monthly Report
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-lg rounded-2xl">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <Upload className="w-5 h-5 text-primary" />
-                      Upload Weekly / Monthly Report
-                    </DialogTitle>
-                    <DialogDescription>
-                      Manually upload your weekly update or monthly report. It will appear in the matching tab below.
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="space-y-4 pt-2">
-                    <div className="grid grid-cols-2 gap-3">
-                      <Button
-                        type="button"
-                        variant={periodicKind === 'weekly' ? 'default' : 'outline'}
-                        onClick={() => setPeriodicKind('weekly')}
-                        className="h-10 rounded-xl text-xs font-semibold"
-                      >
-                        Weekly Report
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={periodicKind === 'monthly' ? 'default' : 'outline'}
-                        onClick={() => setPeriodicKind('monthly')}
-                        className="h-10 rounded-xl text-xs font-semibold"
-                      >
-                        Monthly Report
-                      </Button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {periodicKind === 'weekly' && (
-                        <div className="space-y-1.5">
-                          <Label htmlFor="pWeek">Week No.</Label>
-                          <select
-                            id="pWeek"
-                            value={periodicWeek}
-                            onChange={e => setPeriodicWeek(Number(e.target.value))}
-                            className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
-                          >
-                            {[1, 2, 3, 4].map(w => <option key={w} value={w}>Week {w}</option>)}
-                          </select>
-                        </div>
-                      )}
-                      <div className="space-y-1.5">
-                        <Label htmlFor="pMonth">Month</Label>
-                        <select
-                          id="pMonth"
-                          value={periodicMonth}
-                          onChange={e => setPeriodicMonth(Number(e.target.value))}
-                          className="w-full h-10 px-3 border border-input rounded-lg bg-background text-sm"
-                        >
-                          {[1, 2, 3].map(m => <option key={m} value={m}>Month {m}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="pTitle">Report Title</Label>
-                      <Input
-                        id="pTitle"
-                        placeholder="e.g. Week 3 Attachment Summary"
-                        value={periodicTitle}
-                        onChange={e => setPeriodicTitle(e.target.value)}
-                      />
-                    </div>
-
-                    <div className="space-y-1.5">
-                      <Label htmlFor="pSummary">Summary of Work Done</Label>
-                      <Textarea
-                        id="pSummary"
-                        rows={4}
-                        placeholder="Summarize the work completed during this period..."
-                        value={periodicSummary}
-                        onChange={e => setPeriodicSummary(e.target.value)}
-                      />
-                    </div>
-
-                    <Button type="button" onClick={handlePeriodicSubmit} className="w-full btn-primary h-11 rounded-xl">
-                      Upload Report
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-
-              {/* Upload Attachment Document Dialog */}
-              <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline" className="gap-2 h-10 px-3.5 rounded-xl text-xs font-semibold">
-                    <Upload className="w-4 h-4" /> Upload Document
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="rounded-xl w-[95vw] sm:w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Submit Attachment Report Document</DialogTitle>
-                    <DialogDescription>Upload your PDF or DOCX report archive</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmitReport} className="space-y-4 pt-2">
-                    <div className="space-y-1.5">
-                      <Label htmlFor="title">Report Title</Label>
-                      <Input id="title" placeholder="e.g. Week 1 Comprehensive Attachment Report"
-                        value={reportTitle} onChange={e => setReportTitle(e.target.value)} required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="week">Week Number (optional)</Label>
-                      <Input id="week" type="number" placeholder="1"
-                        value={weekNumber} onChange={e => setWeekNumber(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea id="description" placeholder="Brief summary of your activities..."
-                        rows={3} value={reportDescription} onChange={e => setReportDescription(e.target.value)} required />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label htmlFor="file">File (PDF or DOCX)</Label>
-                      <Input id="file" type="file" accept=".pdf,.doc,.docx" onChange={handleFileSelect} required />
-                      {fileName && <p className="text-xs text-muted-foreground">Selected: {fileName}</p>}
-                    </div>
-                    <Button type="submit" disabled={isUploading}
-                      className="btn-primary w-full h-11 rounded-lg disabled:opacity-60">
-                      {isUploading ? 'Uploading...' : 'Submit Report'}
-                    </Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-
-          {/* Reporting Progress Metric Bar */}
-          {(() => {
-            const studentDailies = currentDailyReports;
-            const studentMiss = currentMissingDailyReports;
-            const totalHours = studentDailies.reduce((a, d) => a + (d.hoursWorked || 0), 0);
-            const totalExpected = studentDailies.length + studentMiss.length || 10;
-            const rate = Math.round((studentDailies.length / Math.max(totalExpected, 1)) * 100);
-
-            return (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3 p-4 sm:p-5 bg-secondary/30 border-b border-border text-xs">
-                <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Daily Reports</p>
-                  <p className="text-base sm:text-lg font-bold text-foreground mt-0.5">{studentDailies.length} Days</p>
-                </div>
-                <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">On-Site Hours</p>
-                  <p className="text-base sm:text-lg font-bold text-primary mt-0.5">{totalHours} Hours</p>
-                </div>
-                <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Missing Reports</p>
-                  <p className={`text-base sm:text-lg font-bold mt-0.5 ${studentMiss.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                    {studentMiss.length} {studentMiss.length === 1 ? 'Day' : 'Days'}
-                  </p>
-                </div>
-                <div className="p-3 bg-white dark:bg-card border border-border rounded-xl">
-                  <p className="text-muted-foreground font-medium text-[11px] sm:text-xs">Compliance</p>
-                  <p className="text-base sm:text-lg font-bold text-emerald-600 mt-0.5">{rate}%</p>
-                </div>
-              </div>
-            );
-          })()}
-
-          {/* Tabbed Report Views */}
-          <div className="p-4 sm:p-6">
-            <Tabs defaultValue="daily" className="space-y-4">
-              <TabsList className="bg-secondary p-1 h-auto min-h-10 rounded-xl w-full flex overflow-x-auto justify-start flex-nowrap scrollbar-none gap-1">
-                <TabsTrigger value="daily" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
-                  Daily Reports ({currentDailyReports.length})
-                </TabsTrigger>
-                <TabsTrigger value="weekly" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
-                  Weekly Updates ({currentWeeklyUpdates.length})
-                </TabsTrigger>
-                <TabsTrigger value="monthly" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0">
-                  Monthly Reports ({currentMonthlyReports.length})
-                </TabsTrigger>
-                <TabsTrigger value="missing" className="text-xs font-semibold px-3 py-2 rounded-lg shrink-0 text-red-600 data-[state=active]:text-red-600">
-                  Missing ({currentMissingDailyReports.length})
-                </TabsTrigger>
-              </TabsList>
-
-              {/* 1. DAILY REPORTS TAB */}
-              <TabsContent value="daily" className="space-y-3 mt-0">
-                {currentDailyReports.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground text-sm">
-                    <Calendar className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                    No daily reports submitted yet. Click "Submit Daily Report" to log today's activities.
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {currentDailyReports.map(dr => (
-                      <div
-                        key={dr.id}
-                        className="bg-secondary/40 border border-border p-4 rounded-xl space-y-2 hover:bg-secondary/70 transition-colors"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="font-bold text-sm text-foreground">{dr.dayOfWeek}, {dr.date}</span>
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-[10px]">
-                              Week {dr.weekNumber} • {dr.hoursWorked} hrs
-                            </Badge>
-                            {dr.status === 'graded' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                                <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Grade: {dr.grade}/100
-                              </span>
-                            ) : dr.status === 'reviewed' ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
-                                <Clock className="w-3 h-3 text-blue-600" /> Reviewed
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
-                                <Clock className="w-3 h-3 text-amber-600" /> Submitted
-                              </span>
-                            )}
-                          </div>
-
-                          <span className="text-[11px] text-muted-foreground">
-                            Logged at {new Date(dr.submittedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        </div>
-
-                        <p className="text-xs font-semibold text-foreground">{dr.title}</p>
-                        <p className="text-xs text-muted-foreground">{dr.tasksCompleted}</p>
-
-                        {dr.skillsAcquired && (
-                          <p className="text-[11px] text-primary font-medium">
-                            Skills: {dr.skillsAcquired} {dr.equipmentOrTools ? `• Tools: ${dr.equipmentOrTools}` : ''}
-                          </p>
-                        )}
-
-                        {dr.feedback && (
-                          <div className="p-2.5 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 rounded-lg text-xs text-blue-900 dark:text-blue-300">
-                            <strong>Supervisor Remark: </strong>"{dr.feedback}"
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* 2. WEEKLY UPDATES TAB (ONLY WHEN UPLOADED) */}
-              <TabsContent value="weekly" className="space-y-3 mt-0">
-                {currentWeeklyUpdates.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground text-sm">
-                    No weekly updates uploaded yet.
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {currentWeeklyUpdates.map(wk => (
-                      <div
-                        key={wk.id}
-                        className="bg-white dark:bg-card border border-border p-5 rounded-xl space-y-3 shadow-2xs"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-base text-foreground">Week {wk.weekNumber} Industrial Update</h4>
-                              {wk.status === 'complete' ? (
-                                <Badge className="bg-emerald-600 text-white text-[10px]">Complete (5/5 Days)</Badge>
-                              ) : (
-                                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-[10px]">
-                                  {wk.submittedDaysCount}/5 Days Logged ({wk.missingDaysCount} Missing)
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground">{wk.startDate} to {wk.endDate}</p>
-                          </div>
-
-                          <div className="text-right shrink-0">
-                            <span className="text-xs font-bold text-primary">{wk.totalHoursWorked} Total Hours</span>
-                            {wk.overallGrade && (
-                              <p className="text-xs font-extrabold text-emerald-600">Weekly Score: {wk.overallGrade}%</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs">
-                          <p className="font-semibold text-foreground">Weekly Tasks Summary (Auto-Synthesized from Daily Reports):</p>
-                          <p className="text-muted-foreground">{wk.summaryHighlights}</p>
-                        </div>
-
-                        {wk.supervisorFeedback && (
-                          <div className="p-2.5 bg-secondary rounded-lg text-xs text-foreground">
-                            <strong>Weekly Evaluation: </strong>{wk.supervisorFeedback}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* 3. MONTHLY REPORTS TAB (ONLY WHEN UPLOADED) */}
-              <TabsContent value="monthly" className="space-y-3 mt-0">
-                {currentMonthlyReports.length === 0 ? (
-                  <div className="text-center py-10 text-muted-foreground text-sm">
-                    No monthly reports uploaded yet.
-                  </div>
-                ) : (
-                  <div className="grid gap-3">
-                    {currentMonthlyReports.map(mo => (
-                      <div
-                        key={mo.id}
-                        className="bg-white dark:bg-card border-2 border-primary/20 p-6 rounded-2xl space-y-4 shadow-sm"
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border pb-3">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-extrabold text-lg text-foreground">{mo.monthName}</h4>
-                              <Badge className="bg-primary text-white text-xs font-bold">Comprehensive Monthly Dossier</Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{mo.startDate} — {mo.endDate}</p>
-                          </div>
-
-                          <div className="flex items-center gap-3">
-                            <div className="text-right">
-                              <p className="text-xs text-muted-foreground font-medium">Compliance Rate</p>
-                              <p className="text-base font-extrabold text-emerald-600">{mo.complianceRate}%</p>
-                            </div>
-                            {mo.overallGrade && (
-                              <div className="text-right border-l border-border pl-3">
-                                <p className="text-xs text-muted-foreground font-medium">Monthly Grade</p>
-                                <p className="text-base font-extrabold text-primary">{mo.overallGrade}%</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-3 gap-3 p-3 bg-secondary rounded-xl text-center text-xs">
-                          <div>
-                            <p className="text-muted-foreground">Daily Reports</p>
-                            <p className="font-bold text-foreground text-sm">{mo.totalDailyReportsSubmitted}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Missing Days</p>
-                            <p className={`font-bold text-sm ${mo.totalDailyReportsMissing > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-                              {mo.totalDailyReportsMissing}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Total Hours</p>
-                            <p className="font-bold text-primary text-sm">{mo.totalHoursLogged} hrs</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs">
-                          <p className="font-bold text-foreground">Monthly Executive Summary:</p>
-                          <p className="text-muted-foreground leading-relaxed">{mo.executiveSummary}</p>
-                        </div>
-
-                        {mo.supervisorComments && (
-                          <div className="p-3 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 rounded-xl text-xs text-blue-900 dark:text-blue-300">
-                            <strong>Supervisor Monthly Endorsement: </strong>{mo.supervisorComments}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              {/* 4. MISSING DAILY REPORTS TAB */}
-              <TabsContent value="missing" className="space-y-3 mt-0">
-                {currentMissingDailyReports.length === 0 ? (
-                  <div className="text-center py-10 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 rounded-xl space-y-1">
-                    <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                    <p className="text-sm font-bold text-emerald-800 dark:text-emerald-300">No Missing Daily Reports!</p>
-                    <p className="text-xs text-emerald-700 dark:text-emerald-400">All required daily reports have been submitted on schedule.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div className="p-3 bg-red-50 dark:bg-red-950/20 border border-red-200 rounded-xl text-xs text-red-800 dark:text-red-300 flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
-                      <span>
-                        You have unsubmitted daily reports. Skipping daily reports is recorded on your official assessment transcript.
-                      </span>
-                    </div>
-
-                    {currentMissingDailyReports.map(miss => (
-                      <div
-                        key={miss.id}
-                        className="bg-white dark:bg-card border-2 border-red-300 dark:border-red-900/60 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3"
-                      >
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-sm text-red-600">Missing: {miss.dayOfWeek}, {miss.date}</span>
-                            <Badge className="bg-red-100 text-red-800 border border-red-200 text-[10px]">
-                              Week {miss.weekNumber} Working Day
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            No daily activity report was received for this scheduled working day.
-                          </p>
-                        </div>
-
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setDailyDate(miss.date);
-                            setDailyDayOfWeek(miss.dayOfWeek);
-                            setDailyWeekNumber(miss.weekNumber);
-                            setDailyMonthNumber(miss.monthNumber);
-                            setIsDailyReportDialogOpen(true);
-                          }}
-                          className="btn-primary text-xs h-9 shrink-0 gap-1.5"
-                        >
-                          <Calendar className="w-3.5 h-3.5" /> Submit Late Daily Report
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
-          </div>
         </div>
       </div>
 
@@ -1161,4 +463,8 @@ export function StudentDashboard() {
     </DashboardLayout>
   );
 }
+
+
+
+
 

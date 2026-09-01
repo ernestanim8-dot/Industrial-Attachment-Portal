@@ -23,7 +23,8 @@ const navItems: Record<string, { label: string; icon: React.ComponentType<{ clas
   student: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/student' },
     { label: 'Progress History', icon: TrendingUp, href: '/student/progress' },
-    { label: 'Your Reports', icon: FolderKanban, href: '/student/uploaded-reports' },
+    { label: 'Your Reports Uploaded', icon: FileText, href: '/student/your-reports-uploaded' },
+    { label: 'Daily report log', icon: FolderKanban, href: '/student/daily-report-log' },
     { label: 'Notifications', icon: Bell, href: '/student' },
   ],
   supervisor: [
@@ -46,19 +47,18 @@ const navItems: Record<string, { label: string; icon: React.ComponentType<{ clas
 
 const financeItems = [
   { label: 'Log Book Payment', icon: CreditCard, href: '/student/services/fee-payments' },
-  { label: 'Daily Report Log', icon: FileText, href: '/student/services/daily-report' },
+  { label: 'Daily report log', icon: FileText, href: '/student/uploaded-reports' },
 ];
 
 const liaisonItems = [
-  { label: 'My Reports', icon: FileText, href: '/student' },
   { label: 'Attachment Letter', icon: Paperclip, href: '/student/services/attachment-letter' },
   { label: 'Assumption Form', icon: FileSignature, href: '/student/services/assumption-form' },
 ];
 
 const roleConfig: Record<string, { label: string; color: string }> = {
-  student:    { label: 'Student',       color: 'bg-blue-100 text-blue-700' },
-  supervisor: { label: 'Supervisor',    color: 'bg-green-100 text-green-700' },
-  admin:      { label: 'Administrator', color: 'bg-violet-100 text-violet-700' },
+  student: { label: 'Student', color: 'bg-blue-100 text-blue-700' },
+  supervisor: { label: 'Supervisor', color: 'bg-green-100 text-green-700' },
+  admin: { label: 'Administrator', color: 'bg-violet-100 text-violet-700' },
 };
 
 export function DashboardLayout({ children, title }: DashboardLayoutProps): React.ReactElement {

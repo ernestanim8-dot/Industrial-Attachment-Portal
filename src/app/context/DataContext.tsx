@@ -5,7 +5,7 @@ import {
   Report, Assessment, Notification, Student, Supervisor,
   AssumptionSubmission, AttachmentLetterSubmission,
   AssignedLocation, DailyLocationCheckIn,
-  DailyReport, WeeklyReportUpdate, MonthlyReport, MissingDailyReport
+  DailyReport, WeeklyReportUpdate, MonthlyReport, MissingDailyReport, ActivityItem
 } from '../types';
 import { useAuth } from './AuthContext';
 import { fetchApi } from '../api';
@@ -42,7 +42,7 @@ interface DataContextType {
   assignStudentLocation: (studentId: string, locationId: string) => void;
   submitDailyLocationCheckIn: (checkIn: Omit<DailyLocationCheckIn, 'id' | 'timestamp'>) => void;
   // Daily, Weekly, Monthly Reports
-  addDailyReport: (report: Omit<DailyReport, 'id' | 'submittedAt' | 'status'>) => void;
+  addDailyReport: (report: Omit<DailyReport, 'id' | 'submittedAt'>) => void;
   reviewDailyReport: (id: string, feedback: string, grade?: number) => void;
   addWeeklyReport: (report: Omit<WeeklyReportUpdate, 'id'>) => void;
   addMonthlyReport: (report: Omit<MonthlyReport, 'id'>) => void;
@@ -393,13 +393,21 @@ const initialAttachmentLetters: AttachmentLetterSubmission[] = [
     id: 'letter1',
     studentId: 'student1',
     studentName: 'John Doe',
+    studentRegNo: 'BC/GRD/22/012',
+    studentPhone: '0502310663',
     department: 'Bachelor of Technology in Graphic Design',
+    academicLevel: 3,
     submittedAt: '2026-01-14T10:00:00Z',
-    status: 'pending',
+    status: 'submitted',
     companyName: 'Tech Corp Ltd',
     companyTown: 'Accra',
+    companyAddress: '12 Independence Avenue, Ridge, Accra',
     letterAddressedTo: 'THE MANAGER',
+    startDate: '2026-01-15',
+    endDate: '2026-06-15',
     studentSignature: 'John Doe',
+    refNumber: 'TTU/IL/AL/2026/001',
+    pdfGeneratedAt: '2026-01-14T10:05:00Z',
   },
 ];
 
@@ -706,6 +714,138 @@ const initialMissingDailyReports: MissingDailyReport[] = [
   },
 ];
 
+
+const WORK_DAYS = [1, 2, 3, 4, 5];
+
+const getWeekNumberFromDate = (dateString: string): number => {
+  const date = new Date(`${dateString}T00:00:00`);
+  const start = new Date(date.getFullYear(), 0, 1);
+  return Math.ceil((((date.getTime() - start.getTime()) / 86400000) + start.getDay() + 1) / 7);
+};
+
+const getMonthNameFromDate = (dateString: string): string => {
+  const date = new Date(`${dateString}T00:00:00`);
+  return date.toLocaleString('default', { month: 'long', year: 'numeric' });
+};
+
+const getWeekRange = (dateString: string) => {
+  const date = new Date(`${dateString}T00:00:00`);
+  const day = date.getDay() || 7;
+  const start = new Date(date);
+  start.setDate(date.getDate() - day + 1);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 4);
+  return {
+    startDate: start.toISOString().split('T')[0],
+    endDate: end.toISOString().split('T')[0],
+  };
+};
+
+const buildWeeklyUpdates = (dailyReports: DailyReport[], missingReports: MissingDailyReport[]): WeeklyReportUpdate[] => {
+  const grouped = new Map<string, { studentId: string; weekNumber: number; monthNumber: number; dates: string[]; dailyReports: DailyReport[]; missing: MissingDailyReport[] }>();
+
+  dailyReports.forEach(report => {
+    const monthNum = report.monthNumber || (report.date ? new Date(`${report.date}T00:00:00`).getMonth() + 1 : 1);
+    const key = `${report.studentId}-${report.weekNumber}`;
+    const group = grouped.get(key) || { studentId: report.studentId, weekNumber: report.weekNumber, monthNumber: monthNum, dates: [], dailyReports: [], missing: [] };
+    group.dailyReports.push(report);
+    group.dates.push(report.date);
+    grouped.set(key, group);
+  });
+
+  missingReports.forEach(report => {
+    const monthNum = report.monthNumber || (report.date ? new Date(`${report.date}T00:00:00`).getMonth() + 1 : 1);
+    const key = `${report.studentId}-${report.weekNumber}`;
+    const group = grouped.get(key) || { studentId: report.studentId, weekNumber: report.weekNumber, monthNumber: monthNum, dates: [], dailyReports: [], missing: [] };
+    group.missing.push(report);
+    group.dates.push(report.date);
+    grouped.set(key, group);
+  });
+
+  return Array.from(grouped.values()).map(group => {
+    const sortedDates = group.dates.sort();
+    const range = sortedDates.length > 0 ? getWeekRange(sortedDates[0]) : { startDate: '', endDate: '' };
+    const submittedDaysCount = group.dailyReports.length;
+    const missingDaysCount = group.missing.length;
+    const totalHoursWorked = group.dailyReports.reduce((total, report) => total + report.hoursWorked, 0);
+
+    // Collect all activities from daily reports in this week
+    const allActivities: ActivityItem[] = [];
+    group.dailyReports.forEach(report => {
+      if (report.activities && report.activities.length > 0) {
+        report.activities.forEach(act => allActivities.push(act));
+      } else if (report.title) {
+        allActivities.push({ title: report.title, description: report.tasksCompleted });
+      }
+    });
+
+    const summaryHighlights = allActivities.length > 0
+      ? allActivities.map((act, idx) => `Activity ${idx + 1}: ${act.title}`).join('; ')
+      : (submittedDaysCount > 0 ? group.dailyReports.map(report => report.title).join('; ') : 'No daily reports submitted for this week.');
+
+    return {
+      id: `wk-${group.studentId}-${group.weekNumber}`,
+      studentId: group.studentId,
+      weekNumber: group.weekNumber,
+      monthNumber: group.monthNumber,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      dailyReports: group.dailyReports.sort((a, b) => a.date.localeCompare(b.date)),
+      activities: allActivities,
+      missingDaysCount,
+      submittedDaysCount,
+      totalHoursWorked,
+      summaryHighlights,
+      status: (missingDaysCount === 0 && submittedDaysCount >= 5 ? 'complete' : 'incomplete') as 'complete' | 'incomplete',
+    };
+  }).sort((a, b) => a.weekNumber - b.weekNumber);
+};
+
+const buildMonthlyReports = (weeklyUpdates: WeeklyReportUpdate[]): MonthlyReport[] => {
+  const grouped = new Map<string, WeeklyReportUpdate[]>();
+  weeklyUpdates.forEach(week => {
+    const monthNum = week.monthNumber || Math.ceil(week.weekNumber / 4) || 1;
+    const key = `${week.studentId}-${monthNum}`;
+    grouped.set(key, [...(grouped.get(key) || []), week]);
+  });
+
+  return Array.from(grouped.entries()).map(([key, weeks]) => {
+    const [studentId, monthNumberText] = key.split('-');
+    const submitted = weeks.reduce((total, week) => total + week.submittedDaysCount, 0);
+    const missing = weeks.reduce((total, week) => total + week.missingDaysCount, 0);
+    const totalExpected = submitted + missing;
+    const sortedWeeks = weeks.sort((a, b) => a.weekNumber - b.weekNumber);
+
+    // Extract activity summaries per week for this month
+    const weeklyActivitySummaries = sortedWeeks.map(w => {
+      const acts = w.activities && w.activities.length > 0
+        ? w.activities.map((a, i) => `Activity ${i + 1}: ${a.title}`).join(', ')
+        : w.summaryHighlights;
+      return `Week ${w.weekNumber}: [${acts}]`;
+    });
+
+    const executiveSummary = weeklyActivitySummaries.length > 0
+      ? `${submitted} daily reports logged across ${weeks.length} weekly updates (${weeklyActivitySummaries.join(' • ')}).`
+      : `${submitted} daily reports submitted across ${weeks.length} weekly updates, with ${missing} missing daily reports recorded.`;
+
+    return {
+      id: `mo-${key}`,
+      studentId,
+      monthNumber: Number(monthNumberText),
+      monthName: sortedWeeks[0]?.startDate ? getMonthNameFromDate(sortedWeeks[0].startDate) : `Month ${monthNumberText}`,
+      startDate: sortedWeeks[0]?.startDate || '',
+      endDate: sortedWeeks[sortedWeeks.length - 1]?.endDate || '',
+      weeks: sortedWeeks,
+      totalDailyReportsSubmitted: submitted,
+      totalDailyReportsMissing: missing,
+      totalHoursLogged: weeks.reduce((total, week) => total + week.totalHoursWorked, 0),
+      complianceRate: totalExpected > 0 ? Math.round((submitted / totalExpected) * 100) : 0,
+      executiveSummary,
+      status: 'generated' as const,
+    };
+  }).sort((a, b) => a.monthNumber - b.monthNumber);
+};
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [reports, setReports] = useState<Report[]>(initialReports);
@@ -719,6 +859,39 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   const [dailyCheckIns, setDailyCheckIns] = useState<DailyLocationCheckIn[]>(initialDailyCheckIns);
   const [dailyReports, setDailyReports] = useState<DailyReport[]>(initialDailyReports);
   const [missingDailyReports, setMissingDailyReports] = useState<MissingDailyReport[]>(initialMissingDailyReports);
+
+  useEffect(() => {
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    const day = today.getDay() || 7;
+    startOfWeek.setDate(today.getDate() - day + 1);
+
+    const generatedMissing: MissingDailyReport[] = [];
+    students.forEach(student => {
+      for (let d = new Date(startOfWeek); d < today; d.setDate(d.getDate() + 1)) {
+        if (!WORK_DAYS.includes(d.getDay())) continue;
+        const date = d.toISOString().split('T')[0];
+        const alreadySubmitted = dailyReports.some(report => report.studentId === student.id && report.date === date);
+        const alreadyMissing = missingDailyReports.some(report => report.studentId === student.id && report.date === date);
+        if (alreadySubmitted || alreadyMissing) continue;
+
+        generatedMissing.push({
+          id: `miss-${student.id}-${date}`,
+          studentId: student.id,
+          studentName: student.name,
+          date,
+          dayOfWeek: d.toLocaleDateString('default', { weekday: 'long' }),
+          weekNumber: getWeekNumberFromDate(date),
+          monthNumber: d.getMonth() + 1,
+          status: 'missing',
+        });
+      }
+    });
+
+    if (generatedMissing.length > 0) {
+      setMissingDailyReports(prev => [...generatedMissing, ...prev]);
+    }
+  }, [students, dailyReports, missingDailyReports]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -1003,22 +1176,29 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const submitAttachmentLetter = async (data: Omit<AttachmentLetterSubmission, 'id' | 'submittedAt' | 'status'>) => {
+    const now = new Date().toISOString();
+    const refNumber = data.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/${String(Date.now()).slice(-4)}`;
     let newSubmission: AttachmentLetterSubmission;
     try {
       const created = await fetchApi('/attachment-letters', {
         method: 'POST',
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, refNumber }),
       });
       newSubmission = {
         ...created,
         id: created._id || created.id,
+        status: 'submitted',
+        pdfGeneratedAt: now,
+        refNumber,
       };
     } catch {
       newSubmission = {
         ...data,
         id: `letter${Date.now()}`,
-        submittedAt: new Date().toISOString(),
-        status: 'pending',
+        submittedAt: now,
+        status: 'submitted',
+        pdfGeneratedAt: now,
+        refNumber,
       };
     }
 
@@ -1027,23 +1207,33 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     const newNotif: Notification = {
       id: `notif${Date.now()}`,
       userId: data.studentId,
-      title: 'Attachment Letter Requested',
-      message: `Your introductory letter request for ${data.companyName} has been submitted.`,
+      title: 'Attachment Letter Submitted',
+      message: `Your Attachment Letter for ${data.companyName} has been submitted electronically to the Industrial Liaison Office. Your PDF is ready for download.`,
       type: 'info',
       read: false,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
     };
     setNotifications(prev => [newNotif, ...prev]);
   };
 
-  const updateAttachmentLetterStatus = async (id: string, status: AttachmentLetterSubmission['status']) => {
+  const updateAttachmentLetterStatus = async (id: string, status: AttachmentLetterSubmission['status'], verifiedBy?: string) => {
+    const now = new Date().toISOString();
     setAttachmentLetterSubmissions(prev =>
-      prev.map(l => (l.id === id ? { ...l, status } : l))
+      prev.map(l =>
+        l.id === id
+          ? {
+              ...l,
+              status,
+              ...(status === 'verified' || status === 'approved' ? { verifiedAt: now, verifiedBy: verifiedBy || 'Industrial Liaison Office' } : {}),
+              ...(status === 'submitted' ? { pdfGeneratedAt: now } : {}),
+            }
+          : l
+      )
     );
     try {
       await fetchApi(`/attachment-letters/${id}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, verifiedBy }),
       });
     } catch {
       // Offline fallback
@@ -1208,7 +1398,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   // DAILY, WEEKLY, AND MONTHLY REPORTS HIERARCHY LOGIC
   // ═══════════════════════════════════════════════════════════════
 
-  const addDailyReport = async (reportData: Omit<DailyReport, 'id' | 'submittedAt' | 'status'>) => {
+  const addDailyReport = async (reportData: Omit<DailyReport, 'id' | 'submittedAt'>) => {
     let newDaily: DailyReport;
     try {
       const created = await fetchApi('/daily-reports', {
@@ -1224,7 +1414,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         ...reportData,
         id: `dr_${Date.now()}`,
         submittedAt: new Date().toISOString(),
-        status: 'submitted',
+        status: reportData.status || 'submitted',
         locationVerified: true,
       };
     }
@@ -1232,7 +1422,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     setDailyReports(prev => [newDaily, ...prev]);
 
     // If this date was marked as missing, remove it from missing list
-    setMissingDailyReports(prev => prev.filter(m => !(m.studentId === reportData.studentId && m.date === reportData.date)));
+    setMissingDailyReports(prev => prev.map(m =>
+      m.studentId === reportData.studentId && m.date === reportData.date
+        ? { ...m, status: 'late_submitted' }
+        : m
+    ));
 
     // Send supervisor notification
     const student = students.find(s => s.id === reportData.studentId);
@@ -1252,16 +1446,12 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success(`Daily report for ${reportData.dayOfWeek} submitted!`);
   };
 
-  const addWeeklyReport = (data: Omit<WeeklyReportUpdate, 'id'>) => {
-    const newWeekly: WeeklyReportUpdate = { ...data, id: `wk_${Date.now()}` };
-    setWeeklyUpdates(prev => [newWeekly, ...prev]);
-    toast.success(`Weekly ${data.weekNumber} report uploaded successfully!`);
+  const addWeeklyReport = () => {
+    toast.info('Weekly updates are generated automatically from submitted and missing daily reports.');
   };
 
-  const addMonthlyReport = (data: Omit<MonthlyReport, 'id'>) => {
-    const newMonthly: MonthlyReport = { ...data, id: `mo_${Date.now()}` };
-    setMonthlyReports(prev => [newMonthly, ...prev]);
-    toast.success(`${data.monthName} report uploaded successfully!`);
+  const addMonthlyReport = () => {
+    toast.info('Monthly reports are generated automatically from weekly updates.');
   };
 
   const reviewDailyReport = async (id: string, feedback: string, grade?: number) => {
@@ -1289,13 +1479,8 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success('Daily report feedback saved successfully!');
   };
 
-  // Weekly updates are no longer auto-aggregated from daily reports;
-  // they only exist when a student explicitly uploads one.
-  const [weeklyUpdates, setWeeklyUpdates] = useState<WeeklyReportUpdate[]>([]);
-
-  // Monthly reports are no longer auto-aggregated; they only exist
-  // when a student explicitly uploads one.
-  const [monthlyReports, setMonthlyReports] = useState<MonthlyReport[]>([]);
+  const weeklyUpdates = buildWeeklyUpdates(dailyReports, missingDailyReports);
+  const monthlyReports = buildMonthlyReports(weeklyUpdates);
 
   return (
     <DataContext.Provider
@@ -1347,3 +1532,8 @@ export function useData() {
   }
   return context;
 }
+
+
+
+
+

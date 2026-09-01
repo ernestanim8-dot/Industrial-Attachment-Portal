@@ -444,7 +444,7 @@ export function SupervisorLocationsPage() {
                         </Button>
                       </Link>
 
-                      <Link to={`/student/uploaded-reports?studentId=${student.id}`}>
+                      <Link to={`/student/your-reports-uploaded?studentId=${student.id}`}>
                         <Button variant="ghost" size="sm" className="text-xs">
                           Level Reports
                         </Button>

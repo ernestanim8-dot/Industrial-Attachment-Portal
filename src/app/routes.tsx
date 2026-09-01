@@ -3,6 +3,7 @@ import { Login } from './pages/Login';
 import { StudentGrades } from './pages/StudentGrades';
 import { StudentProgressPage } from './pages/StudentProgressPage';
 import { YourReportsUploaded } from './pages/YourReportsUploaded';
+import { DailyReportLogPage } from './pages/DailyReportLogPage';
 import { StudentDashboard } from './pages/StudentDashboard';
 import { StudentServicePage } from './pages/StudentServicePage';
 import { SupervisorDashboard } from './pages/SupervisorDashboard';
@@ -16,10 +17,34 @@ export const router = createBrowserRouter([
     element: <Login />,
   },
   {
-    path: '/student/uploaded-reports',
+    path: '/student/your-reports-uploaded',
     element: (
       <ProtectedRoute allowedRoles={['student', 'supervisor', 'admin']}>
         <YourReportsUploaded />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/supervisor/your-reports-uploaded',
+    element: (
+      <ProtectedRoute allowedRoles={['supervisor', 'admin']}>
+        <YourReportsUploaded />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/uploaded-reports',
+    element: (
+      <ProtectedRoute allowedRoles={['student', 'supervisor', 'admin']}>
+        <DailyReportLogPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/student/daily-report-log',
+    element: (
+      <ProtectedRoute allowedRoles={['student', 'supervisor', 'admin']}>
+        <DailyReportLogPage />
       </ProtectedRoute>
     ),
   },
