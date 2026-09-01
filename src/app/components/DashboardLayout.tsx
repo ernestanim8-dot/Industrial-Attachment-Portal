@@ -46,6 +46,7 @@ const navItems: Record<string, { label: string; icon: React.ComponentType<{ clas
 
 const financeItems = [
   { label: 'Log Book Payment', icon: CreditCard, href: '/student/services/fee-payments' },
+  { label: 'Daily Report Log', icon: FileText, href: '/student/services/daily-report' },
 ];
 
 const liaisonItems = [

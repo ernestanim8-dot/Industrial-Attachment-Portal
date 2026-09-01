@@ -6,7 +6,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
   ArrowLeft, CheckCircle,
-  FileSignature, Paperclip, Send, Settings, CreditCard
+  FileSignature, Paperclip, Send, Settings, CreditCard, FileText
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 
 type StudentServiceKey =
   | 'fee-payments'
+  | 'daily-report'
   | 'attachment-letter'
   | 'assumption-form';
 
@@ -26,6 +27,11 @@ const serviceMeta: Record<StudentServiceKey, {
     title: 'Log Book Payment',
     description: 'Pay for your industrial attachment log book and check payment status.',
     icon: CreditCard,
+  },
+  'daily-report': {
+    title: 'Daily Report Log',
+    description: 'Log your daily attachment activities, tasks completed and hours worked.',
+    icon: FileText,
   },
   'attachment-letter': {
     title: 'Attachment Letter',
@@ -87,7 +93,7 @@ export function StudentServicePage() {
   const { serviceKey } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { students, submitAssumptionForm, submitAttachmentLetter } = useData();
+  const { students, submitAssumptionForm, submitAttachmentLetter, addDailyReport } = useData();
 
   // ── Assumption form state ──────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -124,6 +130,187 @@ export function StudentServicePage() {
   }>({});
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [logBookReceiptNo, setLogBookReceiptNo] = useState('');
+
+  // ── Daily Report Log state ─────────────────────────────────────────────────
+  const today = new Date().toISOString().split('T')[0];
+  const [dailyFields, setDailyFields] = useState({
+    date: today,
+    title: '',
+    tasksCompleted: '',
+    skillsAcquired: '',
+    challengesFaced: '',
+    hoursWorked: '8',
+    equipmentOrTools: '',
+  });
+  const [dailyErrors, setDailyErrors] = useState<{
+    title?: string;
+    tasksCompleted?: string;
+    hoursWorked?: string;
+  }>({});
+
+  const setDailyField = (k: keyof typeof dailyFields, v: string) => {
+    setDailyFields(prev => ({ ...prev, [k]: v }));
+    setDailyErrors(prev => ({ ...prev, [k]: undefined }));
+  };
+
+  const handleDailyReportSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const errs: typeof dailyErrors = {};
+    if (!dailyFields.title.trim()) errs.title = 'Please provide a report title';
+    if (!dailyFields.tasksCompleted.trim()) errs.tasksCompleted = 'Describe the tasks you completed today';
+    const hours = Number(dailyFields.hoursWorked);
+    if (!dailyFields.hoursWorked.trim() || Number.isNaN(hours) || hours <= 0 || hours > 24) {
+      errs.hoursWorked = 'Hours worked must be between 1 and 24';
+    }
+    setDailyErrors(errs);
+    if (Object.keys(errs).length > 0) return;
+
+    const date = new Date(`${dailyFields.date}T00:00:00`);
+    const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' });
+    const weekNumber = Math.max(1, Math.ceil((date.getTime() - new Date(date.getFullYear(), 0, 1).getTime()) / (7 * 24 * 60 * 60 * 1000)));
+    const monthNumber = date.getMonth() + 1;
+    const monthName = date.toLocaleDateString('en-US', { month: 'long' });
+
+    addDailyReport({
+      studentId: user?.id || studentData?.id || '',
+      studentName: user?.name || studentData?.name || 'Unknown',
+      date: dailyFields.date,
+      dayOfWeek,
+      weekNumber,
+      monthNumber,
+      monthName,
+      title: dailyFields.title,
+      tasksCompleted: dailyFields.tasksCompleted,
+      skillsAcquired: dailyFields.skillsAcquired,
+      challengesFaced: dailyFields.challengesFaced,
+      hoursWorked: hours,
+      equipmentOrTools: dailyFields.equipmentOrTools,
+    });
+    toast.success('Daily report submitted successfully!');
+    setDailyFields({
+      date: today,
+      title: '',
+      tasksCompleted: '',
+      skillsAcquired: '',
+      challengesFaced: '',
+      hoursWorked: '8',
+      equipmentOrTools: '',
+    });
+    navigate('/student');
+  };
+
+  const renderDailyReportLogForm = () => (
+    <div className="space-y-6">
+      <div className="card-clean rounded-xl p-6 border border-border">
+        <div className="flex items-center justify-between border-b border-border pb-4 mb-4">
+          <div>
+            <h3 className="text-lg font-bold text-foreground">Daily Attachment Report</h3>
+            <p className="text-xs text-muted-foreground">Industrial Liaison Office — Daily Report Log</p>
+          </div>
+          <FileText className="w-6 h-6 text-primary" />
+        </div>
+
+        <form onSubmit={handleDailyReportSubmit} className="space-y-4 pt-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="dr-date">Date</Label>
+              <Input
+                id="dr-date"
+                type="date"
+                value={dailyFields.date}
+                onChange={e => setDailyField('date', e.target.value)}
+                className="h-11 bg-[#f9fafb]"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dr-hours">Hours Worked</Label>
+              <Input
+                id="dr-hours"
+                type="number"
+                min={1}
+                max={24}
+                value={dailyFields.hoursWorked}
+                onChange={e => setDailyField('hoursWorked', e.target.value)}
+                className={`h-11 bg-[#f9fafb] ${dailyErrors.hoursWorked ? 'border-red-500' : ''}`}
+              />
+              {dailyErrors.hoursWorked && <p className="text-xs text-red-500">{dailyErrors.hoursWorked}</p>}
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="dr-title">Report Title</Label>
+            <Input
+              id="dr-title"
+              placeholder="e.g. Network maintenance and server diagnostics"
+              value={dailyFields.title}
+              onChange={e => setDailyField('title', e.target.value)}
+              className={`h-11 bg-[#f9fafb] ${dailyErrors.title ? 'border-red-500' : ''}`}
+            />
+            {dailyErrors.title && <p className="text-xs text-red-500">{dailyErrors.title}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="dr-tasks">Tasks Completed</Label>
+            <textarea
+              id="dr-tasks"
+              title="Tasks Completed"
+              aria-label="Tasks Completed"
+              rows={4}
+              value={dailyFields.tasksCompleted}
+              onChange={e => setDailyField('tasksCompleted', e.target.value)}
+              placeholder="Describe the work you did today..."
+              className={`flex w-full rounded-md border border-input bg-[#f9fafb] px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${dailyErrors.tasksCompleted ? 'border-red-500' : ''}`}
+            />
+            {dailyErrors.tasksCompleted && <p className="text-xs text-red-500">{dailyErrors.tasksCompleted}</p>}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="dr-skills">Skills Acquired (optional)</Label>
+              <textarea
+                id="dr-skills"
+                title="Skills Acquired"
+                aria-label="Skills Acquired"
+                rows={3}
+                value={dailyFields.skillsAcquired}
+                onChange={e => setDailyField('skillsAcquired', e.target.value)}
+                placeholder="New skills or knowledge gained..."
+                className="flex w-full rounded-md border border-input bg-[#f9fafb] px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="dr-challenges">Challenges Faced (optional)</Label>
+              <textarea
+                id="dr-challenges"
+                title="Challenges Faced"
+                aria-label="Challenges Faced"
+                rows={3}
+                value={dailyFields.challengesFaced}
+                onChange={e => setDailyField('challengesFaced', e.target.value)}
+                placeholder="Any challenges encountered..."
+                className="flex w-full rounded-md border border-input bg-[#f9fafb] px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="dr-tools">Equipment / Tools Used (optional)</Label>
+            <Input
+              id="dr-tools"
+              placeholder="e.g. Multimeter, Laptop, Cisco router"
+              value={dailyFields.equipmentOrTools}
+              onChange={e => setDailyField('equipmentOrTools', e.target.value)}
+              className="h-11 bg-[#f9fafb]"
+            />
+          </div>
+
+          <button type="submit" className="btn-primary h-11 rounded-lg px-6 flex items-center gap-2">
+            <FileText className="w-4 h-4" /> Submit Daily Report
+          </button>
+        </form>
+      </div>
+    </div>
+  );
   const [logBookPaymentSubmitted, setLogBookPaymentSubmitted] = useState(false);
 
   if (!serviceKey || !(serviceKey in serviceMeta)) {
@@ -908,6 +1095,7 @@ export function StudentServicePage() {
 
   const renderServiceContent = () => {
     if (key === 'fee-payments') return renderLogBookPaymentForm();
+    if (key === 'daily-report') return renderDailyReportLogForm();
     if (key === 'attachment-letter') return renderAttachmentLetterForm();
     return renderAssumptionForm();
   };
