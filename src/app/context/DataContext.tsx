@@ -948,7 +948,11 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000');
+    const token = localStorage.getItem('token');
+    const socket = io(import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', {
+      auth: { token },
+      extraHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
 
     const userRecord = user as unknown as Record<string, unknown>;
     const userId = (userRecord._id || user.id) as string;

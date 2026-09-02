@@ -18,6 +18,17 @@ import { initSocket } from './utils/socketService';
 
 dotenv.config();
 
+// Ensure JWT_SECRET is configured
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET environment variable is not defined in production!');
+    process.exit(1);
+  } else {
+    process.env.JWT_SECRET = 'dev_secret_key_ttu_attachment_portal_change_in_prod';
+    console.warn('WARNING: JWT_SECRET not set. Using local development fallback secret.');
+  }
+}
+
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
@@ -25,7 +36,7 @@ const PORT = process.env.PORT || 5000;
 // Initialize Socket.io
 initSocket(server);
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',');
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173').split(',').map(s => s.trim());
 
 // Middleware
 app.use(helmet());
@@ -34,7 +45,8 @@ app.use(cors({
     // Allow requests with no origin (e.g., curl, Postman, mobile apps)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error(`CORS: Origin '${origin}' not allowed`));
+    // Disallow origin cleanly without crashing express
+    return callback(null, false);
   },
   credentials: true,
 }));
@@ -90,9 +102,13 @@ async function connectDB() {
     console.log(`Connected to in-memory MongoDB at ${memUri}`);
   }
   
-  // Seed database
-  const { seedDB } = await import('./seed');
-  await seedDB();
+  // Seed database in non-production environments
+  if (process.env.NODE_ENV !== 'production') {
+    const { seedDB } = await import('./seed');
+    await seedDB();
+  } else {
+    console.log('Production mode detected: skipping automatic database seeding.');
+  }
 }
 
 connectDB().then(() => {

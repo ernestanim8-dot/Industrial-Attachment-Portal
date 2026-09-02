@@ -15,7 +15,7 @@ export interface IUser extends Document {
 const UserSchema: Schema = new Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
-  passwordHash: { type: String, required: true },
+  passwordHash: { type: String, required: true, select: false },
   role: { type: String, enum: ['student', 'supervisor', 'admin'], default: 'student' },
   department: { 
     type: String, 
@@ -30,8 +30,8 @@ const UserSchema: Schema = new Schema({
   },
   phone: { type: String },
   assignedSupervisorId: { type: Schema.Types.ObjectId, ref: 'User' },
-  otp: { type: String },
-  otpExpiry: { type: Date },
+  otp: { type: String, select: false },
+  otpExpiry: { type: Date, select: false },
 }, { timestamps: true });
 
 export default mongoose.model<IUser>('User', UserSchema);

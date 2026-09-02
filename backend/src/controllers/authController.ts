@@ -26,31 +26,51 @@ const sendSmsOtp = (phone: string, otp: string, name: string): void => {
 export const register = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name, email, password, role, department, phone, accessCode } = req.body;
+
+    if (
+      typeof name !== 'string' ||
+      typeof email !== 'string' ||
+      typeof password !== 'string' ||
+      typeof role !== 'string' ||
+      !name.trim() ||
+      !email.trim() ||
+      password.length < 6
+    ) {
+      res.status(400).json({ message: 'Invalid input. Name, valid email, and password (min 6 chars) are required.' });
+      return;
+    }
     
     // Protect Admin and Supervisor account creation
-    const validStaffCode = process.env.STAFF_ACCESS_CODE || 'TTU-STAFF-2026';
-    if ((role === 'admin' || role === 'supervisor') && accessCode !== validStaffCode) {
-      res.status(403).json({ message: 'Invalid or missing Staff Access Code for staff account registration.' });
-      return;
+    const configuredStaffCode = process.env.STAFF_ACCESS_CODE || (process.env.NODE_ENV === 'production' ? undefined : 'TTU-STAFF-2026');
+    if (role === 'admin' || role === 'supervisor') {
+      if (!configuredStaffCode || accessCode !== configuredStaffCode) {
+        res.status(403).json({ message: 'Invalid or unconfigured Staff Access Code for staff registration.' });
+        return;
+      }
     }
 
-    // Staff accounts must provide a phone number
-    if ((role === 'admin' || role === 'supervisor') && !phone) {
-      res.status(400).json({ message: 'A phone number is required for Admin and Supervisor accounts.' });
-      return;
-    }
-
-    const userExists = await User.findOne({ email });
+    const normalizedEmail = email.trim().toLowerCase();
+    const userExists = await User.findOne({ email: normalizedEmail });
 
     if (userExists) {
       res.status(400).json({ message: 'User already exists' });
       return;
     }
 
+    const validRoles = ['student', 'supervisor', 'admin'];
+    const userRole = (validRoles.includes(role) ? role : 'student') as 'student' | 'supervisor' | 'admin';
+
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    const user = await User.create({ name, email, passwordHash, role, department, phone });
+    const user = await User.create({ 
+      name: name.trim(), 
+      email: normalizedEmail, 
+      passwordHash, 
+      role: userRole, 
+      department, 
+      phone: phone ? phone.trim() : undefined 
+    });
 
     res.status(201).json({
       _id: user._id,
@@ -67,39 +87,22 @@ export const register = async (req: Request, res: Response): Promise<void> => {
 export const login = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
-    const user = await User.findOne({ email });
+
+    if (typeof email !== 'string' || typeof password !== 'string' || !email.trim() || !password) {
+      res.status(400).json({ message: 'Email and password are required' });
+      return;
+    }
+
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
 
     if (user && (await bcrypt.compare(password, user.passwordHash))) {
-      // Staff roles (admin / supervisor) require SMS OTP verification
-      if (user.role === 'admin' || user.role === 'supervisor') {
-        const otp = generateOtp();
-        const otpExpiry = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
-
-        // Persist OTP on the user document
-        user.otp = otp;
-        user.otpExpiry = otpExpiry;
-        await user.save();
-
-        // Simulate SMS delivery
-        const phone = user.phone || 'N/A (no phone on file)';
-        sendSmsOtp(phone, otp, user.name);
-
-        res.json({
-          requiresOtp: true,
-          userId: user._id.toString(),
-          maskedPhone: user.phone
-            ? `+${'*'.repeat(user.phone.length - 4)}${user.phone.slice(-4)}`
-            : null,
-        });
-        return;
-      }
-
-      // Students log straight in — no OTP needed
       res.json({
         _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
+        department: user.department,
         token: generateToken(user._id.toString()),
       });
     } else {
@@ -114,12 +117,12 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
   try {
     const { userId, otp } = req.body;
 
-    if (!userId || !otp) {
+    if (!userId || !otp || typeof userId !== 'string' || typeof otp !== 'string') {
       res.status(400).json({ message: 'User ID and OTP are required.' });
       return;
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findById(userId).select('+otp +otpExpiry');
 
     if (!user) {
       res.status(404).json({ message: 'User not found.' });
@@ -139,7 +142,7 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    if (user.otp !== otp.toString().trim()) {
+    if (user.otp !== otp.trim()) {
       res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
       return;
     }

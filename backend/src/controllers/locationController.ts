@@ -116,6 +116,10 @@ export const getCheckIns = async (req: AuthRequest, res: Response): Promise<void
     let query: Record<string, unknown> = {};
     if (req.user.role === 'student') {
       query = { studentId: req.user._id };
+    } else if (req.user.role === 'supervisor') {
+      const assignedStudents = await User.find({ assignedSupervisorId: req.user._id }).select('_id');
+      const studentIds = assignedStudents.map(s => s._id);
+      query = { studentId: { $in: studentIds } };
     }
     const checkIns = await CheckIn.find(query).sort({ timestamp: -1 });
     res.json(checkIns);

@@ -10,8 +10,8 @@ export interface OtpChallenge {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string, role?: UserRole) => Promise<UserRole | OtpChallenge>;
-  verifyOtp: (userId: string, otp: string) => Promise<UserRole>;
+  login: (email: string, password: string, role?: UserRole) => Promise<UserRole>;
+  verifyOtp?: (userId: string, otp: string) => Promise<UserRole>;
   register: (email: string, password: string, name: string, role: UserRole, department?: string, phone?: string, accessCode?: string) => Promise<UserRole>;
   logout: () => void;
   isAuthenticated: boolean;
@@ -120,17 +120,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initAuth();
   }, []);
 
-  const login = async (email: string, password: string, roleArg?: UserRole): Promise<UserRole | OtpChallenge> => {
+  const login = async (email: string, password: string, roleArg?: UserRole): Promise<UserRole> => {
     // Attempt backend API first
     try {
       const data = await fetchApi('/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       });
-
-      if (data.requiresOtp) {
-        return data as OtpChallenge;
-      }
 
       localStorage.setItem('token', data.token);
       const userRole = data.role as UserRole;
@@ -170,25 +166,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         found = users[0];
       }
 
-      const targetRole = roleArg || found.role;
-
-      if (targetRole === 'admin' || targetRole === 'supervisor' || found.role === 'admin' || found.role === 'supervisor') {
-        const mockOtp = Math.floor(100000 + Math.random() * 900000).toString();
-        setPendingMockOtp({ userId: found.id, otp: mockOtp, user: found });
-        // In offline/demo mode, log the OTP to the browser console for testing
-        console.info(`[DEMO MODE] OTP for ${found.name}: ${mockOtp}`);
-        return {
-          requiresOtp: true,
-          userId: found.id,
-          maskedPhone: found.phone ? `+*** *** ${found.phone.slice(-4)}` : null,
-        };
-      }
-
       const loggedUser: User = {
         id: found.id,
         email: found.email,
         name: found.name,
-        role: found.role,
+        role: roleArg || found.role,
         department: found.department,
       };
 
@@ -196,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('token', mockToken);
       localStorage.setItem('ttu_session_user', JSON.stringify(loggedUser));
       setUser(loggedUser);
-      return found.role;
+      return loggedUser.role;
     }
   };
 

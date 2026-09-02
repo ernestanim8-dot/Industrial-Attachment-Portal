@@ -71,6 +71,20 @@ export const reviewDailyReport = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
+    const existingReport = await DailyReport.findById(req.params.id);
+    if (!existingReport) {
+      res.status(404).json({ message: 'Daily report not found' });
+      return;
+    }
+
+    if (req.user.role === 'supervisor') {
+      const student = await User.findById(existingReport.studentId);
+      if (!student || student.assignedSupervisorId?.toString() !== req.user._id.toString()) {
+        res.status(403).json({ message: 'Not authorized to review daily reports for this student' });
+        return;
+      }
+    }
+
     const { feedback, grade } = req.body;
     const status = grade !== undefined ? 'graded' : 'reviewed';
 

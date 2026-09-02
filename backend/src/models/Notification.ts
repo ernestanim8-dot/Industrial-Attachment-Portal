@@ -3,7 +3,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 export interface INotification extends Document {
   recipientId: mongoose.Types.ObjectId;
   message: string;
-  type: 'report_submitted' | 'report_graded' | 'supervisor_assigned' | 'system';
+  type: 'report_submitted' | 'report_graded' | 'report_reviewed' | 'supervisor_assigned' | 'system' | 'info';
   read: boolean;
   link?: string;
 }
@@ -13,7 +13,7 @@ const NotificationSchema: Schema = new Schema({
   message: { type: String, required: true },
   type: {
     type: String,
-    enum: ['report_submitted', 'report_graded', 'supervisor_assigned', 'system'],
+    enum: ['report_submitted', 'report_graded', 'report_reviewed', 'supervisor_assigned', 'system', 'info'],
     default: 'system'
   },
   read: { type: Boolean, default: false },

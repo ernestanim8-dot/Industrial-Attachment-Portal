@@ -1,20 +1,20 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { GraduationCap, Shield, UserCheck, Eye, EyeOff, ArrowRight, Smartphone, RefreshCw } from 'lucide-react';
+import { GraduationCap, Shield, UserCheck, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '../components/ui/select';
-import { useAuth, OtpChallenge } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 import { UserRole } from '../types';
 import { ThemeToggle } from '../components/ThemeToggle';
 import ttuLogo from '../../assets/TTU LOGO.png';
 
 export const Login = (): React.ReactElement => {
   const navigate = useNavigate();
-  const { login, verifyOtp, user, isAuthenticated } = useAuth();
+  const { login, user, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   React.useEffect(() => {
@@ -26,19 +26,6 @@ export const Login = (): React.ReactElement => {
   }, [isAuthenticated, user, navigate]);
 
   const [showPassword, setShowPassword] = useState(false);
-
-  // OTP challenge state
-  const [otpChallenge, setOtpChallenge] = useState<OtpChallenge | null>(null);
-  const [otpValue, setOtpValue] = useState(['', '', '', '', '', '']);
-  const otpRefs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
-
   const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginRole, setLoginRole] = useState<UserRole>('student');
@@ -53,61 +40,11 @@ export const Login = (): React.ReactElement => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const result = await login(loginEmail, loginPassword, loginRole);
-      if (typeof result === 'object' && 'requiresOtp' in result) {
-        setOtpChallenge(result);
-        toast.info(
-          `🔐 OTP sent to ${result.maskedPhone ?? 'registered phone'}`,
-          { duration: 6000 }
-        );
-      } else {
-        toast.success('Welcome back!');
-        navigateToDashboard(result as UserRole);
-      }
+      const role = await login(loginEmail, loginPassword, loginRole);
+      toast.success('Welcome back!');
+      navigateToDashboard(role);
     } catch {
       toast.error('Invalid credentials. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleOtpInput = (index: number, value: string) => {
-    if (!/^\d?$/.test(value)) return;
-    const next = [...otpValue];
-    next[index] = value;
-    setOtpValue(next);
-    if (value && index < 5) otpRefs[index + 1].current?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Backspace' && !otpValue[index] && index > 0) {
-      otpRefs[index - 1].current?.focus();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (pasted.length === 6) {
-      setOtpValue(pasted.split(''));
-      otpRefs[5].current?.focus();
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!otpChallenge) return;
-    const code = otpValue.join('');
-    if (code.length < 6) { toast.error('Please enter the full 6-digit code.'); return; }
-    setIsLoading(true);
-    try {
-      const role = await verifyOtp(otpChallenge.userId, code);
-      toast.success('Verified! Welcome to the portal.');
-      navigateToDashboard(role);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Invalid OTP. Please try again.';
-      toast.error(msg);
-      setOtpValue(['', '', '', '', '', '']);
-      otpRefs[0].current?.focus();
     } finally {
       setIsLoading(false);
     }
@@ -118,86 +55,6 @@ export const Login = (): React.ReactElement => {
     { value: 'supervisor', label: 'Supervisor',      icon: UserCheck },
     { value: 'admin',      label: 'Administrator',   icon: Shield },
   ];
-
-  // ── OTP verification screen ─────────────────────────────────────────────
-  if (otpChallenge) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-3 sm:p-4">
-        <div className="w-full max-w-md bg-card rounded-2xl shadow-xl border border-border p-5 sm:p-8 md:p-10">
-          <div className="flex flex-col items-center text-center mb-6 sm:mb-8">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
-              <Smartphone className="w-7 h-7 sm:w-8 sm:h-8 text-primary" />
-            </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground">SMS Verification</h1>
-            <p className="text-muted-foreground text-xs sm:text-sm mt-2 leading-relaxed">
-              A 6-digit code has been sent to<br />
-              <span className="font-semibold text-foreground">
-                {otpChallenge.maskedPhone ?? 'your registered phone number'}
-              </span>
-            </p>
-            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
-              ⚠️ Demo mode: your OTP appears in the notification toast above
-            </p>
-          </div>
-
-          <form onSubmit={handleVerifyOtp} className="space-y-5 sm:space-y-6">
-            <div>
-              <Label className="text-xs sm:text-sm font-semibold text-center block mb-3">Enter Verification Code</Label>
-              <div className="flex gap-1.5 sm:gap-2 justify-center" onPaste={handleOtpPaste}>
-                {otpValue.map((digit, i) => (
-                  <input
-                    key={i}
-                    ref={otpRefs[i]}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    title={`OTP digit ${i + 1}`}
-                    aria-label={`Verification code digit ${i + 1}`}
-                    placeholder="·"
-                    onChange={e => handleOtpInput(i, e.target.value)}
-                    onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className="w-10 sm:w-12 h-12 sm:h-14 text-center text-lg sm:text-xl font-bold rounded-lg sm:rounded-xl border-2 border-border bg-secondary focus:border-primary focus:bg-white outline-none transition-all duration-150"
-                    autoFocus={i === 0}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading || otpValue.join('').length < 6}
-              className="btn-primary w-full h-11 rounded-lg disabled:opacity-60 text-sm"
-            >
-              {isLoading ? 'Verifying…' : (
-                <><span>Verify &amp; Open Portal</span><ArrowRight className="w-4 h-4" /></>
-              )}
-            </button>
-
-            <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-              <button
-                type="button"
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-                onClick={() => { setOtpChallenge(null); setOtpValue(['', '', '', '', '', '']); }}
-              >
-                ← Back to login
-              </button>
-              <button
-                type="button"
-                className="flex items-center gap-1 hover:text-primary transition-colors"
-                onClick={() => {
-                  toast.info('Resending OTP…');
-                  handleLogin({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>);
-                }}
-              >
-                <RefreshCw className="w-3 h-3" /> Resend code
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4 relative">
@@ -228,7 +85,7 @@ export const Login = (): React.ReactElement => {
                 { icon: '📄', text: 'Submit weekly reports with file uploads' },
                 { icon: '📊', text: 'Real-time grading and supervisor feedback' },
                 { icon: '🔔', text: 'Instant notifications via email & live updates' },
-                { icon: '📱', text: 'SMS 2-factor authentication for staff accounts' },
+                { icon: '🔒', text: 'Fast, secure role-based access for students and staff' },
               ].map(f => (
                 <div key={f.text} className="flex items-center gap-3">
                   <span className="text-base">{f.icon}</span>

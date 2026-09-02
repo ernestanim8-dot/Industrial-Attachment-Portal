@@ -91,11 +91,28 @@ export const getReports = async (req: AuthRequest, res: Response): Promise<void>
 export const getReportById = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const report = await Report.findById(req.params.id)
-      .populate('studentId', 'name email');
+      .populate('studentId', 'name email assignedSupervisorId');
       
     if (!report) {
       res.status(404).json({ message: 'Report not found' });
       return;
+    }
+
+    // Enforce access control
+    if (req.user.role === 'student') {
+      const studentId = report.studentId && (report.studentId as any)._id 
+        ? (report.studentId as any)._id.toString() 
+        : report.studentId.toString();
+      if (studentId !== req.user._id.toString()) {
+        res.status(403).json({ message: 'Not authorized to view this report' });
+        return;
+      }
+    } else if (req.user.role === 'supervisor') {
+      const assignedSupervisorId = (report.studentId as any)?.assignedSupervisorId?.toString();
+      if (assignedSupervisorId !== req.user._id.toString()) {
+        res.status(403).json({ message: 'Not authorized to view reports for this student' });
+        return;
+      }
     }
 
     res.json(report);
@@ -110,22 +127,47 @@ export const updateReport = async (req: AuthRequest, res: Response): Promise<voi
       res.status(403).json({ message: 'Not authorized to update reports' });
       return;
     }
-    const report = await Report.findByIdAndUpdate(req.params.id, req.body, { new: true }).populate('studentId', 'name email');
+
+    const existingReport = await Report.findById(req.params.id)
+      .populate('studentId', 'name email assignedSupervisorId');
+
+    if (!existingReport) {
+      res.status(404).json({ message: 'Report not found' });
+      return;
+    }
+
+    if (req.user.role === 'supervisor') {
+      const assignedSupervisorId = (existingReport.studentId as any)?.assignedSupervisorId?.toString();
+      if (assignedSupervisorId !== req.user._id.toString()) {
+        res.status(403).json({ message: 'Not authorized to update reports for this student' });
+        return;
+      }
+    }
+
+    // Whitelist allowed fields to prevent mass assignment
+    const { status, grade } = req.body;
+    const updateData: Record<string, unknown> = {};
+    if (status !== undefined) updateData.status = status;
+    if (grade !== undefined) updateData.grade = grade;
+
+    const report = await Report.findByIdAndUpdate(req.params.id, updateData, { new: true })
+      .populate('studentId', 'name email');
+
     if (!report) {
       res.status(404).json({ message: 'Report not found' });
       return;
     }
 
     // Send email to student if status changed to reviewed or graded
-    if (req.body.status && (req.body.status === 'reviewed' || req.body.status === 'graded')) {
+    if (status && (status === 'reviewed' || status === 'graded')) {
       const student = report.studentId as any; // populated
       if (student && student.email) {
-        const action = req.body.status === 'graded' ? 'graded' : 'reviewed';
+        const action = status === 'graded' ? 'graded' : 'reviewed';
         
         const notification = await Notification.create({
           recipientId: student._id,
           message: `Your report "${report.title}" has been ${action}.`,
-          type: req.body.status === 'graded' ? 'report_graded' : 'report_reviewed',
+          type: status === 'graded' ? 'report_graded' : 'report_reviewed',
           link: `/reports/${report._id}`
         });
 
@@ -138,7 +180,7 @@ export const updateReport = async (req: AuthRequest, res: Response): Promise<voi
 
         await sendEmail(
           student.email,
-          `Report ${req.body.status.charAt(0).toUpperCase() + req.body.status.slice(1)}: ${report.title}`,
+          `Report ${status.charAt(0).toUpperCase() + status.slice(1)}: ${report.title}`,
           `Your report "${report.title}" has been ${action}. Log in to view your feedback.`,
           `<p>Your report <strong>"${report.title}"</strong> has been ${action}.</p><p>Log in to the portal to view your feedback.</p>`
         );
@@ -151,6 +193,15 @@ export const updateReport = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
+/** Sanitize value for CSV to prevent Formula Injection (DDE / CSV Injection) */
+const sanitizeCsv = (val: unknown): string => {
+  let str = String(val ?? '');
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
+  return `"${str.replace(/"/g, '""')}"`;
+};
+
 export const exportReports = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     if (req.user.role !== 'supervisor' && req.user.role !== 'admin') {
@@ -158,20 +209,27 @@ export const exportReports = async (req: AuthRequest, res: Response): Promise<vo
       return;
     }
 
-    const reports = await Report.find({})
+    let query: Record<string, unknown> = {};
+    if (req.user.role === 'supervisor') {
+      const assignedStudents = await User.find({ assignedSupervisorId: req.user._id }).select('_id');
+      const studentIds = assignedStudents.map(s => s._id);
+      query = { studentId: { $in: studentIds } };
+    }
+
+    const reports = await Report.find(query)
       .populate('studentId', 'name email')
       .sort({ createdAt: -1 });
 
     let csv = 'Report Title,Student Name,Student Email,Week Number,Status,Grade,Submission Date\n';
     
     reports.forEach((report: any) => {
-      const title = `"${(report.title || '').replace(/"/g, '""')}"`;
-      const studentName = report.studentId ? `"${report.studentId.name}"` : '"Unknown"';
-      const studentEmail = report.studentId ? `"${report.studentId.email}"` : '"Unknown"';
-      const week = report.weekNumber || '';
-      const status = report.status || '';
-      const grade = report.grade || '';
-      const date = report.createdAt ? new Date(report.createdAt).toISOString().split('T')[0] : '';
+      const title = sanitizeCsv(report.title);
+      const studentName = sanitizeCsv(report.studentId?.name || 'Unknown');
+      const studentEmail = sanitizeCsv(report.studentId?.email || 'Unknown');
+      const week = sanitizeCsv(report.weekNumber ?? '');
+      const status = sanitizeCsv(report.status ?? '');
+      const grade = sanitizeCsv(report.grade ?? '');
+      const date = sanitizeCsv(report.createdAt ? new Date(report.createdAt).toISOString().split('T')[0] : '');
       
       csv += `${title},${studentName},${studentEmail},${week},${status},${grade},${date}\n`;
     });
