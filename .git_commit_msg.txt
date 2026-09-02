@@ -1,1 +1,8 @@
-fix: student identity matching, Work Hours Rule mobile layout, tab report filtering, Badge import restore
+feat: improve light and dark mode color themes
+
+- Revamp light mode palette with crisp white cards and slate-blue backgrounds
+- Refine dark mode with deep slate-indigo backgrounds and electric blue accents
+- Add status color utilities for badges (success, warning, destructive)
+- Fix hardcoded bg-[#f7f8fc] and bg-[#f9fafb] to use theme CSS variables
+- Add ThemeToggle button to Login page top-right corner
+- Ensure stat-card gradients adapt to both themes

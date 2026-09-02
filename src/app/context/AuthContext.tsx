@@ -28,7 +28,7 @@ const INITIAL_DEMO_USERS = [
     password: 'AdminPass2026!',
     name: 'System Admin',
     role: 'admin' as UserRole,
-    phone: '+233200000001',
+    phone: '+2335577608740',
     department: 'Administration',
   },
   {
@@ -37,7 +37,7 @@ const INITIAL_DEMO_USERS = [
     password: 'SupervisorPass2026!',
     name: 'Dr. Kwame Nkrumah',
     role: 'supervisor' as UserRole,
-    phone: '+233200000002',
+    phone: '+233502310663',
     department: 'Bachelor of Technology in Graphic Design',
   },
   {
@@ -46,7 +46,7 @@ const INITIAL_DEMO_USERS = [
     password: 'SupervisorPass2026!',
     name: 'Prof. Yaa Asantewaa',
     role: 'supervisor' as UserRole,
-    phone: '+233200000003',
+    phone: '+233502310663',
     department: 'Bachelor of Technology in Painting',
   },
   {
@@ -55,7 +55,7 @@ const INITIAL_DEMO_USERS = [
     password: 'StudentPass123',
     name: 'John Doe',
     role: 'student' as UserRole,
-    phone: '+233240001122',
+    phone: '+233502310663',
     department: 'Bachelor of Technology in Graphic Design',
   },
 ];
@@ -155,7 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn("Backend API unavailable, using local mock auth fallback.");
       const users = getStoredMockUsers();
       const searchKey = email.trim().toLowerCase();
-      
+
       let found = users.find((u) =>
         (u.email && u.email.toLowerCase() === searchKey) ||
         (u.studentId && u.studentId.toLowerCase() === searchKey) ||
