@@ -173,15 +173,6 @@ export const Login = (): React.ReactElement => {
               </div>
             </div>
 
-            {(loginRole === 'admin' || loginRole === 'supervisor') && (
-              <div className="flex items-center gap-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <Smartphone className="w-4 h-4 text-blue-600 shrink-0" />
-                <p className="text-xs text-blue-700 font-medium">
-                  You'll receive an SMS verification code on your registered phone number.
-                </p>
-              </div>
-            )}
-
             <button
               type="submit"
               disabled={isLoading}
