@@ -26,7 +26,7 @@ interface DataContextType {
   missingDailyReports: MissingDailyReport[];
   addReport: (report: Omit<Report, 'id' | 'submittedDate' | 'status'>) => Promise<void>;
   updateReport: (id: string, updates: Partial<Report>) => void;
-  addAssessment: (assessment: Omit<Assessment, 'id' | 'assessedDate'>) => void;
+  addAssessment: (assessment: Omit<Assessment, 'id' | 'assessedDate'>) => Promise<void>;
   markNotificationAsRead: (id: string) => void;
   assignSupervisor: (studentId: string, supervisorId: string) => void;
   addStudent: (student: Omit<Student, 'id' | 'progress'>) => void;
@@ -1066,7 +1066,13 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         assessedDate: new Date().toISOString().split('T')[0],
       };
     }
-    setAssessments(prev => [...prev, newAssessment]);
+    setAssessments(prev => {
+      const existing = prev.find(a => a.reportId === newAssessment.reportId);
+      if (existing) {
+        return prev.map(a => a.reportId === newAssessment.reportId ? { ...newAssessment, id: existing.id } : a);
+      }
+      return [...prev, newAssessment];
+    });
   };
 
   const markNotificationAsRead = async (id: string) => {

@@ -11,7 +11,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
-import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, CheckCircle2, FolderKanban } from 'lucide-react';
+import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, CheckCircle2, FolderKanban, BarChart2 } from 'lucide-react';
 import { Report, Student, DailyReport } from '../types';
 import { downloadApiFile } from '../api';
 import { Badge } from '../components/ui/badge';
@@ -19,7 +19,7 @@ import { Badge } from '../components/ui/badge';
 export function SupervisorDashboard() {
   const { user } = useAuth();
   const {
-    reports, students, supervisors, updateReport,
+    reports, students, supervisors, updateReport, addAssessment,
     dailyReports, weeklyUpdates, monthlyReports, missingDailyReports, reviewDailyReport
   } = useData();
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
@@ -74,13 +74,24 @@ export function SupervisorDashboard() {
     setIsGradingDialogOpen(true);
   };
 
-  const handleSubmitGrade = (e: React.FormEvent) => {
+  const handleSubmitGrade = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedReport) return;
     const overallGrade = Math.round(
       (parseFloat(attendance || '0') + parseFloat(performance || '0') + parseFloat(reportQuality || '0') + parseFloat(professionalism || '0')) / 4
     );
     updateReport(selectedReport.id, { status: 'graded', grade: overallGrade, feedback });
+    await addAssessment({
+      reportId: selectedReport.id,
+      studentId: selectedReport.studentId,
+      supervisorId: supervisorData?.id || user?.id || '',
+      attendance: Number(attendance),
+      performance: Number(performance),
+      reportQuality: Number(reportQuality),
+      professionalism: Number(professionalism),
+      overallGrade,
+      feedback,
+    });
     toast.success('Report graded successfully!');
     setIsGradingDialogOpen(false);
     setAttendance(''); setPerformance(''); setReportQuality('');
@@ -211,6 +222,26 @@ export function SupervisorDashboard() {
           <Link to="/supervisor/locations" className="shrink-0">
             <Button className="btn-primary gap-2 h-10 px-4 rounded-xl text-xs font-semibold shadow-xs">
               <Building2 className="w-4 h-4" /> Manage Locations & Attendance
+            </Button>
+          </Link>
+        </div>
+
+        {/* Analytics Quick Access Banner */}
+        <div className="bg-gradient-to-r from-indigo-500/10 via-indigo-500/5 to-transparent border border-indigo-500/20 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
+              <BarChart2 className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-foreground text-base">Assessment Analytics & Performance Insights</h3>
+              <p className="text-xs text-muted-foreground">
+                View cohort grade distributions, daily compliance trends, and per-student performance breakdowns.
+              </p>
+            </div>
+          </div>
+          <Link to="/supervisor/analytics" className="shrink-0">
+            <Button className="gap-2 h-10 px-4 rounded-xl text-xs font-semibold shadow-xs bg-indigo-600 hover:bg-indigo-700 text-white border-0">
+              <BarChart2 className="w-4 h-4" /> View Analytics
             </Button>
           </Link>
         </div>

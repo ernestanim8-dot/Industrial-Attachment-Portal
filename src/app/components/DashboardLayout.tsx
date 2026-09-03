@@ -32,7 +32,7 @@ const navItems: Record<string, { label: string; icon: React.ComponentType<{ clas
     { label: 'Locations & Attendance', icon: MapPin, href: '/supervisor/locations' },
     { label: 'Students', icon: Users, href: '/supervisor' },
     { label: 'Reports', icon: FileText, href: '/supervisor' },
-    { label: 'Analytics', icon: BarChart2, href: '/supervisor' },
+    { label: 'Analytics', icon: BarChart2, href: '/supervisor/analytics' },
   ],
   admin: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
@@ -119,7 +119,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
           {items.map((item) => {
             if (item.label === 'Notifications') return null;
             const Icon = item.icon;
-            const active = item.label === 'Dashboard' && location.pathname === item.href;
+            const active = location.pathname === item.href;
             return (
               <button
                 key={item.label}

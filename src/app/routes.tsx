@@ -8,6 +8,7 @@ import { StudentDashboard } from './pages/StudentDashboard';
 import { StudentServicePage } from './pages/StudentServicePage';
 import { SupervisorDashboard } from './pages/SupervisorDashboard';
 import { SupervisorLocationsPage } from './pages/SupervisorLocationsPage';
+import { SupervisorAssessmentAnalyticsPage } from './pages/SupervisorAssessmentAnalyticsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
@@ -53,6 +54,14 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={['supervisor', 'admin']}>
         <SupervisorLocationsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/supervisor/analytics',
+    element: (
+      <ProtectedRoute allowedRoles={['supervisor', 'admin']}>
+        <SupervisorAssessmentAnalyticsPage />
       </ProtectedRoute>
     ),
   },
