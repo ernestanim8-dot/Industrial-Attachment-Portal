@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { AttachmentLetterSubmission } from '../types';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
@@ -6,13 +6,32 @@ import { Download, Printer, CheckCircle2, ShieldCheck, QrCode } from 'lucide-rea
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import letterheadImg from '../../assets/ttu-letterhead.png';
+import letterheadSrc from '../../assets/ttu-letterhead.png';
 
 interface AttachmentLetterDocumentProps {
   submission: AttachmentLetterSubmission;
   showActions?: boolean;
   onVerified?: () => void;
   canVerify?: boolean;
+}
+
+/** Convert any URL (including Vite blob asset URLs) to a base64 data URL so html2canvas can render it. */
+function toDataUrl(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return reject(new Error('canvas context unavailable'));
+      ctx.drawImage(img, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error(`Failed to load: ${url}`));
+    img.src = url;
+  });
 }
 
 const formatDisplayDate = (value?: string) => {
@@ -64,6 +83,14 @@ export function AttachmentLetterDocument({
 }: AttachmentLetterDocumentProps) {
   const printRef = useRef<HTMLDivElement>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
+  const [letterheadDataUrl, setLetterheadDataUrl] = useState<string>(letterheadSrc);
+
+  // Pre-convert letterhead to base64 so html2canvas can render without CORS errors
+  useEffect(() => {
+    toDataUrl(letterheadSrc)
+      .then(setLetterheadDataUrl)
+      .catch(() => setLetterheadDataUrl(letterheadSrc)); // fall back to the raw src
+  }, []);
 
   const formattedDate = React.useMemo(() => {
     return formatDateOrFallback(submission.submittedAt, '24 January 2026');
@@ -73,102 +100,60 @@ export function AttachmentLetterDocument({
   const attachmentEndDate = formatOrdinalDate(submission.endDate, '24th November, 2023');
   const refNumber = submission.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/${(submission.id || '001').slice(-3).padStart(3, '0').toUpperCase()}`;
 
+  // ── Download PDF ──────────────────────────────────────────────────────────
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     setIsGeneratingPdf(true);
-    toast.info('Generating official Attachment Letter PDF...');
+    toast.info('Generating official Attachment Letter PDF…');
 
     try {
       const element = printRef.current;
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
+        imageTimeout: 15000,
       });
 
       const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
       const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pdfHeight));
+      // Multi-page support
+      if (imgHeight <= pdfHeight) {
+        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      } else {
+        let yOffset = 0;
+        let remaining = imgHeight;
+        let page = 0;
+        while (remaining > 0) {
+          if (page > 0) pdf.addPage();
+          pdf.addImage(imgData, 'PNG', 0, -yOffset, imgWidth, imgHeight);
+          yOffset += pdfHeight;
+          remaining -= pdfHeight;
+          page++;
+        }
+      }
 
       const fileName = `TTU_Attachment_Letter_${submission.studentName.replace(/\s+/g, '_')}_${submission.studentRegNo || 'STU'}.pdf`;
       pdf.save(fileName);
-      toast.success('Official Attachment Letter PDF downloaded successfully!');
+      toast.success('Official Attachment Letter PDF downloaded!');
     } catch (err) {
       console.error('PDF generation error:', err);
-      toast.error('Failed to generate PDF. Please try using the Print option.');
+      toast.error('PDF failed. Use Print → Save as PDF instead.');
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
+  // ── Print (uses targeted @media print CSS below) ──────────────────────────
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-
-    // Collect all stylesheets and style tags so Tailwind + fonts are preserved in print
-    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
-      .map(el => el.outerHTML)
-      .join('\n');
-
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      // Fallback: If popup blocker prevents opening a new window, trigger window.print directly
-      window.print();
-      return;
-    }
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>TTU Attachment Letter - ${submission.studentName}</title>
-          ${styleTags}
-          <style>
-            @page { size: A4 portrait; margin: 10mm; }
-            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-            html, body {
-              background: #fff !important;
-              color: #0f172a !important;
-              margin: 0 !important;
-              padding: 0 !important;
-              font-family: 'Times New Roman', Times, serif;
-            }
-            .printable-card {
-              width: 100% !important;
-              max-width: 190mm !important;
-              margin: 0 auto !important;
-              box-shadow: none !important;
-              border: none !important;
-              padding: 0 !important;
-            }
-          </style>
-        </head>
-        <body>
-          <div class="printable-card">${printContent.innerHTML}</div>
-          <script>
-            window.onload = function() {
-              window.focus();
-              setTimeout(function() {
-                window.print();
-                setTimeout(function() { window.close(); }, 600);
-              }, 300);
-            };
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    window.print();
   };
 
   const statusBadge = (st: string) => {
@@ -226,20 +211,22 @@ export function AttachmentLetterDocument({
       <div className="bg-slate-100 dark:bg-slate-950/30 border border-slate-200 rounded-xl p-3 sm:p-6 max-w-4xl mx-auto overflow-x-auto">
         <div
           ref={printRef}
-          className="print-attachment-letter relative mx-auto bg-white text-slate-950 font-serif shadow-sm border border-slate-300 px-7 py-8 sm:px-10 sm:py-9 w-full max-w-[794px] min-h-[1123px] overflow-hidden"
+          id="ttu-attachment-letter"
+          className="relative mx-auto bg-white text-slate-950 font-serif shadow-sm border border-slate-300 px-7 py-8 sm:px-10 sm:py-9 w-full max-w-[794px] min-h-[1123px]"
         >
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.025] select-none pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.025] select-none pointer-events-none overflow-hidden">
             <span className="text-6xl sm:text-7xl font-black rotate-[-32deg] tracking-widest uppercase whitespace-nowrap">
               TTU INDUSTRIAL LIAISON
             </span>
           </div>
 
           <div className="relative z-10">
-            <header className="mb-6">
+            <header className="mb-4">
               <img
-                src={letterheadImg}
+                src={letterheadDataUrl}
                 alt="Takoradi Technical University Industrial Liaison Office Letterhead"
                 className="w-full h-auto object-contain block select-none"
+                crossOrigin="anonymous"
               />
             </header>
 
@@ -339,31 +326,29 @@ export function AttachmentLetterDocument({
         </div>
       </div>
 
-      {/* Embedded print styles for seamless browser printing */}
+      {/* Targeted print CSS — hides everything except the letter */}
       <style>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-attachment-letter, .print-attachment-letter * {
-            visibility: visible;
-          }
-          .print-attachment-letter {
-            position: absolute;
-            left: 0;
-            top: 0;
+          body * { visibility: hidden !important; }
+          #ttu-attachment-letter,
+          #ttu-attachment-letter * { visibility: visible !important; }
+          #ttu-attachment-letter {
+            position: fixed !important;
+            inset: 0 !important;
             width: 100% !important;
+            height: auto !important;
             margin: 0 !important;
-            padding: 10mm !important;
+            padding: 12mm !important;
             box-shadow: none !important;
             border: none !important;
             background: #fff !important;
             color: #0f172a !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+            overflow: visible !important;
+            z-index: 99999 !important;
           }
-          @page {
-            size: A4 portrait;
-            margin: 10mm;
-          }
+          @page { size: A4 portrait; margin: 10mm; }
         }
       `}</style>
     </div>
