@@ -441,10 +441,13 @@ export function StudentDashboard() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {dashboardCards.map(item => {
             const Icon = item.icon;
+            const isExternal = item.label === 'Attachment Letter';
             return (
               <Link
                 key={item.label}
                 to={item.href}
+                target={isExternal ? '_blank' : undefined}
+                rel={isExternal ? 'noopener noreferrer' : undefined}
                 className="bg-card border border-border rounded-2xl p-5 shadow-sm hover:border-primary transition-colors flex flex-col justify-start min-h-[140px]"
               >
                 <Icon className="w-7 h-7 text-muted-foreground mb-3" />
