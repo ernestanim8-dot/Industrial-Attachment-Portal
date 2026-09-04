@@ -33,6 +33,28 @@ const formatDisplayDate = (value?: string) => {
 const formatDateOrFallback = (value: string | undefined, fallback: string) => {
   return formatDisplayDate(value) || fallback;
 };
+const formatOrdinalDate = (value: string | undefined, fallback: string) => {
+  if (!value) return fallback;
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  const day = date.getDate();
+  const suffix = day % 10 === 1 && day !== 11
+    ? 'st'
+    : day % 10 === 2 && day !== 12
+      ? 'nd'
+      : day % 10 === 3 && day !== 13
+        ? 'rd'
+        : 'th';
+
+  return `${day}${suffix} ${date.toLocaleDateString('en-GB', {
+    month: 'long',
+    year: 'numeric',
+  })}`;
+};
 
 export function AttachmentLetterDocument({
   submission,
@@ -47,8 +69,8 @@ export function AttachmentLetterDocument({
     return formatDateOrFallback(submission.submittedAt, '24 January 2026');
   }, [submission.submittedAt]);
 
-  const attachmentStartDate = formatDateOrFallback(submission.startDate, '15 January 2026');
-  const attachmentEndDate = formatDateOrFallback(submission.endDate, '15 June 2026');
+  const attachmentStartDate = formatOrdinalDate(submission.startDate, '11th September, 2023');
+  const attachmentEndDate = formatOrdinalDate(submission.endDate, '24th November, 2023');
   const refNumber = submission.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/${(submission.id || '001').slice(-3).padStart(3, '0').toUpperCase()}`;
 
   const handleDownloadPdf = async () => {
@@ -245,13 +267,13 @@ export function AttachmentLetterDocument({
 
             <section className="space-y-3.5 text-[14px] leading-7 text-justify">
               <p>
-                Students of Takoradi Technical University pursuing Bachelor of Technology (B.Tech) and Higher National Diploma (HND) programmes are expected to undergo practical industrial training in industry as part of the academic requirements for the award of their certificate.
+                Students of Takoradi Technical University pursuing Bachelor of Technology(B.Tech) are expected to undergo practical industrial training in industry as part of the requirements for the award of their certificate.
               </p>
               <p>
-                It is believed that the attachment programme would bring positive industrial exposure to students. This exercise would enable students to put theory into practice and acquaint themselves with current technological developments in industry and commerce.
+                It is believed that the attachment programme would bring positive industrial exposure to students. This exercise would enable students to put theory into practice and acquaint themselves with current technological development in industry and commerce.
               </p>
               <p>
-                The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from <strong className="font-bold underline">{attachmentStartDate}</strong> to <strong className="font-bold underline">{attachmentEndDate}</strong>.
+                The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from <strong className="font-bold underline">{attachmentStartDate}</strong> - <strong className="font-bold underline">{attachmentEndDate}</strong>.
               </p>
             </section>
 
@@ -260,19 +282,19 @@ export function AttachmentLetterDocument({
               <table className="w-full border-collapse border border-slate-950 text-sm font-sans">
                 <tbody>
                   <tr className="bg-slate-50">
-                    <td className="w-[36%] border border-slate-950 px-3 py-2 font-bold">Registration Number</td>
+                    <td className="w-[36%] border border-slate-950 px-3 py-2 font-bold">REGISTRATION NUMBER:</td>
                     <td className="border border-slate-950 px-3 py-2 font-mono font-bold">{submission.studentRegNo || submission.studentId || 'N/A'}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-950 px-3 py-2 font-bold">Name</td>
+                    <td className="border border-slate-950 px-3 py-2 font-bold">NAME:</td>
                     <td className="border border-slate-950 px-3 py-2 font-bold uppercase">{submission.studentName}</td>
                   </tr>
                   <tr className="bg-slate-50">
-                    <td className="border border-slate-950 px-3 py-2 font-bold">Programme</td>
+                    <td className="border border-slate-950 px-3 py-2 font-bold">PROGRAMME:</td>
                     <td className="border border-slate-950 px-3 py-2 font-semibold">{submission.department || 'N/A'}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-950 px-3 py-2 font-bold">Contact Number</td>
+                    <td className="border border-slate-950 px-3 py-2 font-bold">CONTACT NUMBER:</td>
                     <td className="border border-slate-950 px-3 py-2 font-mono font-semibold">{submission.studentPhone || 'N/A'}</td>
                   </tr>
                 </tbody>
@@ -281,10 +303,10 @@ export function AttachmentLetterDocument({
 
             <section className="space-y-3.5 text-[14px] leading-7 text-justify">
               <p>
-                We request that the student should be made to familiarize himself/herself with all the related sections available in your organization.
+                We request that the student should be made to familiarize him/herself with all the related sections available in your organization.
               </p>
               <p>
-                For your information, all students at Takoradi Technical University are covered by a Group Personal Accident Insurance Policy during their official attachment period.
+                For your information, all students at the University are covered by Group Personal Accident Insurance policy.
               </p>
               <p>We count on your usual cooperation.</p>
             </section>
@@ -297,7 +319,7 @@ export function AttachmentLetterDocument({
                   Takoradi Technical University<br />Industrial Liaison Office<br />Officially Verified & Stamped
                 </div>
                 <p className="mt-3 text-sm font-extrabold uppercase">Mark Kofi Aremu</p>
-                <p className="text-[11px] font-bold uppercase tracking-normal text-slate-700">Head, Industrial Liaison Department</p>
+                <p className="text-[11px] font-bold uppercase tracking-normal text-slate-700">Industrial Liaison Officer</p>
               </div>
 
               <div className="self-end border border-slate-300 bg-slate-50 p-3 text-right text-xs">
@@ -308,7 +330,7 @@ export function AttachmentLetterDocument({
             </section>
 
             <footer className="mt-8 border-t border-slate-300 pt-3 flex items-center justify-between gap-4 text-[9px] font-sans text-slate-500">
-              <span>Form TTU/IL-01 | Industrial Attachment Introductory Letter</span>
+              <span className="font-bold uppercase text-slate-700">NB: DO NOT ACCEPT THIS LETTER IF IT DOES NOT BEAR THE ORIGINAL STAMP</span>
               <span className="font-mono">Security Code: TTU-AUTH-{(submission.id || '01').toUpperCase()}</span>
             </footer>
           </div>
@@ -317,4 +339,7 @@ export function AttachmentLetterDocument({
     </div>
   );
 }
+
+
+
 
