@@ -7,9 +7,11 @@ import { Label } from '../components/ui/label';
 import {
   ArrowLeft, CheckCircle,
   FileSignature, Paperclip, Send, Settings, CreditCard,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
 
 type StudentServiceKey =
   | 'fee-payments'
@@ -86,7 +88,7 @@ export function StudentServicePage() {
   const { serviceKey } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { students, submitAssumptionForm } = useData();
+  const { students, submitAssumptionForm, submitAttachmentLetter } = useData();
 
   // ── Assumption form state ──────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -110,6 +112,23 @@ export function StudentServicePage() {
   const [logBookReceiptNo, setLogBookReceiptNo] = useState('');
   const [logBookPaymentSubmitted, setLogBookPaymentSubmitted] = useState(false);
 
+  // ── Attachment Letter state ────────────────────────────────────────────────
+  const [letterStep, setLetterStep] = useState<1 | 2>(1);
+  const [letterFields, setLetterFields] = useState({
+    companyName: 'IDesign',
+    companyTown: 'Accra',
+    letterAddressedTo: 'THE MANAGER',
+    agreedToTerms: false,
+    studentSignature: '',
+  });
+  const [letterErrors, setLetterErrors] = useState<{
+    companyName?: string;
+    companyTown?: string;
+    studentSignature?: string;
+  }>({});
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isLetterSubmitting, setIsLetterSubmitting] = useState(false);
+
   if (!serviceKey || !(serviceKey in serviceMeta)) {
     return <Navigate to="/student" replace />;
   }
@@ -124,8 +143,365 @@ export function StudentServicePage() {
   ) || students[0];
 
 
+
+  const validateLetterStep1 = (): boolean => {
+    const errs: typeof letterErrors = {};
+    if (!letterFields.companyName.trim()) errs.companyName = 'Please provide company name';
+    if (!letterFields.companyTown.trim()) errs.companyTown = 'Company city/town is required';
+    setLetterErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const validateLetterStep2 = (): boolean => {
+    const errs: typeof letterErrors = {};
+    if (!letterFields.studentSignature.trim()) errs.studentSignature = 'Signature is required to confirm request';
+    setLetterErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const handleLetterNext = () => {
+    if (validateLetterStep1()) setLetterStep(2);
+  };
+
+  const handleLetterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateLetterStep2()) return;
+    setIsLetterSubmitting(true);
+    try {
+      await submitAttachmentLetter({
+        studentId: studentData?.id || user?.id || '',
+        studentName: studentData?.name || user?.name || 'Unknown',
+        studentRegNo: studentData?.studentId || '',
+        studentPhone: (studentData as { phone?: string })?.phone || '',
+        department: studentData?.department || user?.department || 'Unknown Department',
+        academicLevel: studentData?.currentLevel || 1,
+        companyName: letterFields.companyName,
+        companyTown: letterFields.companyTown,
+        letterAddressedTo: letterFields.letterAddressedTo,
+        studentSignature: letterFields.studentSignature,
+      });
+      toast.success('Attachment Letter request submitted to the Industrial Liaison Office!');
+      navigate('/student');
+    } catch {
+      toast.error('Submission failed. Please try again.');
+    } finally {
+      setIsLetterSubmitting(false);
+    }
+  };
+
   const renderAttachmentLetterForm = () => {
-    return null;
+    return (
+      <div className="space-y-4">
+        {/* Top Header Row matching screenshot */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-medium text-slate-700 dark:text-slate-200">
+            Industrial Liaison Attachment
+          </h2>
+          <button
+            type="button"
+            onClick={() => {
+              if (validateLetterStep1()) {
+                setIsPreviewOpen(true);
+              } else {
+                toast.error('Please fill out Company Name and Town/City first.');
+              }
+            }}
+            className="bg-[#7cb342] hover:bg-[#689f38] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded shadow-xs transition-colors cursor-pointer"
+          >
+            Are you done? Click to Preview Form
+          </button>
+        </div>
+
+        {/* Main Form Card */}
+        <div className="bg-white dark:bg-card border border-border shadow-xs overflow-hidden">
+          {/* Tab Header Bar */}
+          <div className="flex items-stretch bg-[#2196f3]">
+            {/* Tab 1: Company Information (Red) */}
+            <button
+              type="button"
+              onClick={() => setLetterStep(1)}
+              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${
+                letterStep === 1 ? 'bg-[#c62828]' : 'bg-[#c62828]/85 hover:bg-[#c62828]'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shrink-0">
+                1
+              </span>
+              Company Information
+            </button>
+
+            {/* Tab 2: Terms of Agreement (Blue) */}
+            <button
+              type="button"
+              onClick={() => {
+                if (validateLetterStep1()) setLetterStep(2);
+              }}
+              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${
+                letterStep === 2 ? 'bg-[#1976d2]' : 'bg-[#2196f3] hover:bg-[#1e88e5]'
+              }`}
+            >
+              <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shrink-0">
+                2
+              </span>
+              Terms of Agreement
+            </button>
+
+            {/* Spacer extending blue tab bar background */}
+            <div className="flex-1 bg-[#2196f3]" />
+
+            {/* Settings Gear Icon in white block at right */}
+            <div className="bg-white flex items-center justify-center px-3 border-l border-blue-400">
+              <button
+                type="button"
+                title="Settings"
+                className="text-slate-800 hover:text-black transition-colors"
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Step 1: Form Content */}
+          {letterStep === 1 ? (
+            <div>
+              <div className="p-6 sm:p-8 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                  {/* Left Column: Company Name & Town/City */}
+                  <div className="space-y-6">
+                    {/* Company Name */}
+                    <div className="space-y-1">
+                      <Label htmlFor="al-companyName" className="text-xs text-slate-500 font-normal">
+                        Company Name :
+                      </Label>
+                      <Input
+                        id="al-companyName"
+                        value={letterFields.companyName}
+                        onChange={e => {
+                          setLetterFields(prev => ({ ...prev, companyName: e.target.value }));
+                          setLetterErrors(prev => ({ ...prev, companyName: undefined }));
+                        }}
+                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${
+                          letterErrors.companyName ? 'border-red-500' : ''
+                        }`}
+                        placeholder="Enter Company Name"
+                      />
+                      {letterErrors.companyName && (
+                        <p className="text-xs text-red-500">{letterErrors.companyName}</p>
+                      )}
+                    </div>
+
+                    {/* Town/City */}
+                    <div className="space-y-1">
+                      <Label htmlFor="al-companyTown" className="text-xs text-slate-500 font-normal">
+                        Town/City :
+                      </Label>
+                      <Input
+                        id="al-companyTown"
+                        value={letterFields.companyTown}
+                        onChange={e => {
+                          setLetterFields(prev => ({ ...prev, companyTown: e.target.value }));
+                          setLetterErrors(prev => ({ ...prev, companyTown: undefined }));
+                        }}
+                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${
+                          letterErrors.companyTown ? 'border-red-500' : ''
+                        }`}
+                        placeholder="Enter Town/City"
+                      />
+                      {letterErrors.companyTown && (
+                        <p className="text-xs text-red-500">{letterErrors.companyTown}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: Letter Addressed To (aligned down matching screenshot) */}
+                  <div className="flex flex-col justify-end space-y-1">
+                    <Label htmlFor="al-letterAddressedTo" className="text-xs text-slate-500 font-normal">
+                      Letter Addressed To :
+                    </Label>
+                    <select
+                      id="al-letterAddressedTo"
+                      title="Letter Addressed To"
+                      aria-label="Letter Addressed To"
+                      value={letterFields.letterAddressedTo}
+                      onChange={e => setLetterFields(prev => ({ ...prev, letterAddressedTo: e.target.value }))}
+                      className="flex h-10 w-full rounded border border-slate-300 dark:border-slate-700 bg-background px-3 py-2 text-sm text-foreground ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
+                      <option value="THE MANAGER">THE MANAGER</option>
+                      <option value="THE GENERAL MANAGER">THE GENERAL MANAGER</option>
+                      <option value="THE HUMAN RESOURCE MANAGER">THE HUMAN RESOURCE MANAGER</option>
+                      <option value="THE MANAGING DIRECTOR">THE MANAGING DIRECTOR</option>
+                      <option value="THE ADMINISTRATOR">THE ADMINISTRATOR</option>
+                      <option value="THE HEAD OF RECRUITMENT">THE HEAD OF RECRUITMENT</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Light grey bottom bar with NEXT > */}
+              <div className="bg-[#e0e0e0] dark:bg-muted p-3.5 px-6 flex justify-end items-center">
+                <button
+                  type="button"
+                  onClick={handleLetterNext}
+                  className="font-bold text-xs uppercase tracking-wider text-slate-900 dark:text-foreground flex items-center gap-1 hover:opacity-75 transition-opacity cursor-pointer"
+                >
+                  NEXT <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <form onSubmit={handleLetterSubmit} className="p-6 sm:p-8 space-y-5">
+              <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground space-y-3 leading-relaxed max-h-64 overflow-y-auto">
+                <p className="font-semibold text-foreground text-base">Industrial Liaison – Request for Attachment Letter</p>
+                <p>
+                  I, the undersigned student, hereby request an official introductory letter for industrial attachment
+                  addressed to the organization specified in Step 1.
+                </p>
+                <p>
+                  I understand that this letter is a formal university document intended solely for securing an industrial attachment
+                  placement. I promise to represent Takoradi Technical University with integrity, professionalism, and high academic standards
+                  at the host organization.
+                </p>
+                <p>
+                  I agree to update the Industrial Liaison Office immediately upon acceptance/placement, or should there be any change in my attachment details.
+                </p>
+              </div>
+
+              {/* Agree checkbox */}
+              <div className="flex items-start gap-3">
+                <input
+                  id="al-agreedToTerms"
+                  type="checkbox"
+                  title="I agree to terms and conditions"
+                  aria-label="I agree to terms and conditions"
+                  checked={letterFields.agreedToTerms}
+                  onChange={e => setLetterFields(prev => ({ ...prev, agreedToTerms: e.target.checked }))}
+                  className="mt-0.5 h-4 w-4 rounded accent-[var(--primary)] cursor-pointer"
+                />
+                <Label htmlFor="al-agreedToTerms" className="leading-snug cursor-pointer select-none">
+                  I have read, understood, and agree to the conditions of requesting an Introductory Attachment Letter.
+                </Label>
+              </div>
+
+              {/* Student signature */}
+              <div className="space-y-1.5">
+                <Label htmlFor="al-studentSignature">Student Signature (type full name) :</Label>
+                <Input
+                  id="al-studentSignature"
+                  placeholder="Enter your full name as signature"
+                  value={letterFields.studentSignature}
+                  onChange={e => {
+                    setLetterFields(prev => ({ ...prev, studentSignature: e.target.value }));
+                    setLetterErrors(prev => ({ ...prev, studentSignature: undefined }));
+                  }}
+                  className={letterErrors.studentSignature ? 'border-red-500' : ''}
+                />
+                {letterErrors.studentSignature && (
+                  <p className="text-xs text-red-500">{letterErrors.studentSignature}</p>
+                )}
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setLetterStep(1)}
+                  className="h-10 rounded-lg px-5 border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
+                >
+                  ← Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={!letterFields.agreedToTerms || isLetterSubmitting}
+                  className="btn-primary h-10 rounded-lg px-6 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer"
+                >
+                  <Send className="w-4 h-4" /> {isLetterSubmitting ? 'Submitting...' : 'Submit to Liaison Office'}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Preview Dialog */}
+        <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+          <DialogContent className="max-w-2xl bg-white border border-border shadow-lg rounded-xl overflow-hidden p-0">
+            <DialogHeader className="p-5 border-b border-border bg-slate-50">
+              <DialogTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Paperclip className="w-5 h-5 text-primary" />
+                Introductory Letter Preview
+              </DialogTitle>
+              <DialogDescription>
+                This is a draft of the official introductory letter that will be generated upon approval.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="p-8 max-h-[60vh] overflow-y-auto bg-white select-none">
+              <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
+                <h2 className="text-2xl font-bold text-slate-900 tracking-wide uppercase">Takoradi Technical University</h2>
+                <p className="text-sm font-semibold text-slate-700 tracking-wider uppercase">Office of the Industrial Liaison Officer</p>
+                <p className="text-xs text-slate-500 mt-1">P.O. Box 256, Takoradi, Ghana | Tel: +233 (0) 312 022 983</p>
+              </div>
+
+              <div className="space-y-4 text-sm text-slate-800">
+                <div className="flex justify-between">
+                  <div>
+                    <p className="font-bold uppercase">{letterFields.letterAddressedTo}</p>
+                    <p className="font-semibold">{letterFields.companyName}</p>
+                    <p className="font-semibold uppercase">{letterFields.companyTown}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-medium">Date: {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                    <p className="font-medium">Our Ref: TTU/IL/AL/{new Date().getFullYear()}</p>
+                  </div>
+                </div>
+
+                <p className="pt-4">Dear Sir/Madam,</p>
+
+                <p className="font-bold text-center underline uppercase tracking-wide py-2">
+                  Introductory Letter for Industrial Attachment - {user?.name || studentData?.name || 'STUDENT'}
+                </p>
+
+                <p className="leading-relaxed text-justify text-slate-700">
+                  We write to introduce the above-named student who is currently pursuing a{' '}
+                  <span className="font-bold text-slate-900">{user?.department || studentData?.department || 'your department'}</span>{' '}
+                  program at Takoradi Technical University.
+                </p>
+
+                <p className="leading-relaxed text-justify text-slate-700">
+                  As part of the academic curriculum for the award of a Bachelor of Technology degree, students are required to undergo a period of compulsory industrial training. This training aims to bridge the gap between academic theory and practical industrial application.
+                </p>
+
+                <p className="leading-relaxed text-justify text-slate-700">
+                  We would be most grateful if you could offer this student a placement in your organization for the attachment period. We are confident that they will prove to be diligent, respectful, and value-adding to your team.
+                </p>
+
+                <p className="leading-relaxed text-justify text-slate-700">
+                  Thank you for your partnership in training the next generation of industry leaders.
+                </p>
+
+                <div className="pt-8 space-y-1">
+                  <p>Yours faithfully,</p>
+                  <div className="h-10 flex items-end">
+                    <p className="font-bold text-slate-400 italic">Signature & Stamp</p>
+                  </div>
+                  <p className="font-bold text-slate-900">Mark Kofi Aremu</p>
+                  <p className="text-xs text-slate-500 uppercase">Head, Industrial Liaison Department</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-border bg-slate-50 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsPreviewOpen(false)}
+                className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                Close Preview
+              </button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
   };
 
   // ── Assumption form helpers ─────────────────────────────────────────────────

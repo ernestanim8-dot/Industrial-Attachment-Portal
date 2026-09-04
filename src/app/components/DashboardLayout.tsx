@@ -182,18 +182,10 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
                   {liaisonItems.map(item => {
                     const ItemIcon = item.icon;
                     const active = location.pathname === item.href;
-                    const isAttachmentLetter = item.label === 'Attachment Letter';
                     return (
                       <button
                         key={item.href}
-                        onClick={() => {
-                          if (isAttachmentLetter) {
-                            window.open(item.href, '_blank', 'noopener,noreferrer');
-                          } else {
-                            navigate(item.href);
-                          }
-                          setSidebarOpen(false);
-                        }}
+                        onClick={() => { navigate(item.href); setSidebarOpen(false); }}
                         className={`w-full flex items-center gap-2.5 rounded-md px-3 py-2 text-left text-xs font-medium transition-all duration-150 ${active ? 'bg-primary text-white' : 'text-white/55 hover:text-white hover:bg-sidebar-accent'}`}
                       >
                         <ItemIcon className="w-3.5 h-3.5 shrink-0" />
