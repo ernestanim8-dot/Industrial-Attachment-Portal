@@ -6,7 +6,7 @@ import { Download, Printer, CheckCircle2, ShieldCheck, QrCode } from 'lucide-rea
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import ttuLogo from '../../assets/TTU LOGO.png';
+import letterheadImg from '../../assets/ttu-letterhead.png';
 
 interface AttachmentLetterDocumentProps {
   submission: AttachmentLetterSubmission;
@@ -235,21 +235,12 @@ export function AttachmentLetterDocument({
           </div>
 
           <div className="relative z-10">
-            <header className="border-b-[3px] border-slate-950 pb-4 mb-6">
-              <div className="grid grid-cols-[82px_1fr_96px] items-center gap-4">
-                <img src={ttuLogo} alt="Takoradi Technical University Logo" className="h-20 w-20 object-contain" />
-                <div className="text-center">
-                  <h1 className="text-2xl font-black uppercase leading-tight tracking-normal">Takoradi Technical University</h1>
-                  <p className="mt-1 text-sm font-bold uppercase tracking-normal font-sans">Office of the Industrial Liaison Officer</p>
-                  <p className="mt-1 text-[11px] text-slate-700 font-sans">P.O. Box 256, Takoradi, Western Region, Ghana | Tel: +233 (0) 312 022 983 / 984</p>
-                  <p className="text-[10px] text-slate-600 font-sans">Email: liaison@ttu.edu.gh | Web: www.ttu.edu.gh</p>
-                </div>
-                <div className="flex flex-col items-center justify-center border border-slate-300 bg-slate-50 p-2 text-center font-sans">
-                  <QrCode className="w-9 h-9 text-slate-800" />
-                  <span className="mt-1 text-[8px] font-bold uppercase text-slate-700">E-Verified</span>
-                  <span className="text-[7px] font-mono text-slate-500 break-all">{refNumber}</span>
-                </div>
-              </div>
+            <header className="mb-6">
+              <img
+                src={letterheadImg}
+                alt="Takoradi Technical University Industrial Liaison Office Letterhead"
+                className="w-full h-auto object-contain block select-none"
+              />
             </header>
 
             <section className="mb-6 grid grid-cols-[1fr_auto] gap-6 text-sm font-sans">
@@ -338,8 +329,11 @@ export function AttachmentLetterDocument({
             </section>
 
             <footer className="mt-8 border-t border-slate-300 pt-3 flex items-center justify-between gap-4 text-[9px] font-sans text-slate-500">
+              <div className="flex items-center gap-1.5">
+                <QrCode className="w-4 h-4 text-slate-700 shrink-0" />
+                <span className="font-mono">Ref: {refNumber} | Security: TTU-AUTH-{(submission.id || '01').toUpperCase()}</span>
+              </div>
               <span className="font-bold uppercase text-slate-700">NB: DO NOT ACCEPT THIS LETTER IF IT DOES NOT BEAR THE ORIGINAL STAMP</span>
-              <span className="font-mono">Security Code: TTU-AUTH-{(submission.id || '01').toUpperCase()}</span>
             </footer>
           </div>
         </div>
