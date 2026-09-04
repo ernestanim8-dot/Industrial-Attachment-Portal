@@ -6,6 +6,7 @@ import { Download, Printer, CheckCircle2, ShieldCheck, QrCode } from 'lucide-rea
 import { toast } from 'sonner';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import ttuLogo from '../../assets/TTU LOGO.png';
 
 interface AttachmentLetterDocumentProps {
   submission: AttachmentLetterSubmission;
@@ -13,6 +14,25 @@ interface AttachmentLetterDocumentProps {
   onVerified?: () => void;
   canVerify?: boolean;
 }
+
+const formatDisplayDate = (value?: string) => {
+  if (!value) return '';
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return date.toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+};
+
+const formatDateOrFallback = (value: string | undefined, fallback: string) => {
+  return formatDisplayDate(value) || fallback;
+};
 
 export function AttachmentLetterDocument({
   submission,
@@ -24,21 +44,13 @@ export function AttachmentLetterDocument({
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);
 
   const formattedDate = React.useMemo(() => {
-    try {
-      const d = submission.submittedAt ? new Date(submission.submittedAt) : new Date();
-      return d.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
-    } catch {
-      return '24th January, 2026';
-    }
+    return formatDateOrFallback(submission.submittedAt, '24 January 2026');
   }, [submission.submittedAt]);
 
+  const attachmentStartDate = formatDateOrFallback(submission.startDate, '15 January 2026');
+  const attachmentEndDate = formatDateOrFallback(submission.endDate, '15 June 2026');
   const refNumber = submission.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/${(submission.id || '001').slice(-3).padStart(3, '0').toUpperCase()}`;
 
-  // Handle PDF generation and download
   const handleDownloadPdf = async () => {
     if (!printRef.current) return;
     setIsGeneratingPdf(true);
@@ -66,7 +78,7 @@ export function AttachmentLetterDocument({
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
       pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, Math.min(imgHeight, pdfHeight));
-      
+
       const fileName = `TTU_Attachment_Letter_${submission.studentName.replace(/\s+/g, '_')}_${submission.studentRegNo || 'STU'}.pdf`;
       pdf.save(fileName);
       toast.success('Official Attachment Letter PDF downloaded successfully!');
@@ -78,7 +90,6 @@ export function AttachmentLetterDocument({
     }
   };
 
-  // Handle browser native print
   const handlePrint = () => {
     const printContent = printRef.current;
     if (!printContent) return;
@@ -95,13 +106,11 @@ export function AttachmentLetterDocument({
         <head>
           <title>TTU Attachment Letter - ${submission.studentName}</title>
           <style>
-            @page {
-              size: A4;
-              margin: 15mm 15mm 15mm 15mm;
-            }
+            @page { size: A4; margin: 12mm; }
+            * { box-sizing: border-box; }
             body {
-              font-family: 'Times New Roman', Times, serif, system-ui;
-              color: #111827;
+              font-family: 'Times New Roman', Times, serif;
+              color: #0f172a;
               background: #fff;
               margin: 0;
               padding: 0;
@@ -109,42 +118,17 @@ export function AttachmentLetterDocument({
               print-color-adjust: exact;
             }
             .printable-card {
-              max-width: 800px;
+              width: 186mm;
+              min-height: 273mm;
               margin: 0 auto;
               background: #fff;
             }
-            .ttu-crest {
-              height: 75px;
-              width: auto;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-            }
-            th, td {
-              border: 1px solid #1f2937;
-              padding: 6px 10px;
-              font-size: 13px;
-            }
-            .watermark {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%) rotate(-30deg);
-              font-size: 80px;
-              font-weight: 900;
-              color: rgba(0, 0, 0, 0.04);
-              pointer-events: none;
-              text-transform: uppercase;
-              letter-spacing: 12px;
-              white-space: nowrap;
-            }
+            table { width: 100%; border-collapse: collapse; }
+            td { border: 1px solid #0f172a; padding: 7px 10px; font-size: 12px; }
           </style>
         </head>
         <body>
-          <div class="printable-card">
-            ${printContent.innerHTML}
-          </div>
+          <div class="printable-card">${printContent.innerHTML}</div>
           <script>
             window.onload = function() {
               window.print();
@@ -175,29 +159,18 @@ export function AttachmentLetterDocument({
           </Badge>
         );
       case 'rejected':
-        return (
-          <Badge className="bg-red-600 text-white font-bold text-xs px-3 py-1">
-            Revision Requested
-          </Badge>
-        );
+        return <Badge className="bg-red-600 text-white font-bold text-xs px-3 py-1">Revision Requested</Badge>;
       default:
-        return (
-          <Badge variant="outline" className="text-muted-foreground text-xs px-3 py-1">
-            Not Submitted
-          </Badge>
-        );
+        return <Badge variant="outline" className="text-muted-foreground text-xs px-3 py-1">Not Submitted</Badge>;
     }
   };
 
   return (
     <div className="space-y-4">
-      {/* Top Action & Status Bar */}
       {showActions && (
         <div className="bg-white dark:bg-card border border-border rounded-xl p-4 flex flex-wrap items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Status:
-            </span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Status:</span>
             {statusBadge(submission.status)}
             <span className="text-xs text-muted-foreground hidden sm:inline">
               Ref: <strong className="text-foreground">{refNumber}</strong>
@@ -205,28 +178,14 @@ export function AttachmentLetterDocument({
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrint}
-              className="gap-1.5 text-xs font-semibold rounded-lg h-9 border-border"
-            >
+            <Button variant="outline" size="sm" onClick={handlePrint} className="gap-1.5 text-xs font-semibold rounded-lg h-9 border-border">
               <Printer className="w-4 h-4 text-primary" /> Print Letter
             </Button>
-            <Button
-              size="sm"
-              onClick={handleDownloadPdf}
-              disabled={isGeneratingPdf}
-              className="btn-primary gap-1.5 text-xs font-semibold rounded-lg h-9"
-            >
+            <Button size="sm" onClick={handleDownloadPdf} disabled={isGeneratingPdf} className="btn-primary gap-1.5 text-xs font-semibold rounded-lg h-9">
               <Download className="w-4 h-4" /> {isGeneratingPdf ? 'Generating...' : 'Download PDF'}
             </Button>
             {canVerify && onVerified && (submission.status === 'submitted' || submission.status === 'pending' || submission.status === 'pdf_generated') && (
-              <Button
-                size="sm"
-                onClick={onVerified}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-bold rounded-lg h-9"
-              >
+              <Button size="sm" onClick={onVerified} className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 text-xs font-bold rounded-lg h-9">
                 <CheckCircle2 className="w-4 h-4" /> Verify Letter
               </Button>
             )}
@@ -234,239 +193,128 @@ export function AttachmentLetterDocument({
         </div>
       )}
 
-      {/* Official Printable TTU Attachment Letter Sheet */}
-      <div className="bg-white text-slate-900 border border-slate-300 rounded-xl shadow-md p-6 sm:p-10 max-w-4xl mx-auto font-serif relative overflow-hidden">
-        
-        {/* Printable Container */}
-        <div ref={printRef} className="relative bg-white p-2">
-          
-          {/* Subtle Watermark */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] select-none pointer-events-none">
-            <span className="text-7xl font-black rotate-[-30deg] tracking-widest uppercase">
+      <div className="bg-slate-100 dark:bg-slate-950/30 border border-slate-200 rounded-xl p-3 sm:p-6 max-w-4xl mx-auto overflow-x-auto">
+        <div
+          ref={printRef}
+          className="relative mx-auto bg-white text-slate-950 font-serif shadow-sm border border-slate-300 px-7 py-8 sm:px-10 sm:py-9 w-full max-w-[794px] min-h-[1123px] overflow-hidden"
+        >
+          <div className="absolute inset-0 flex items-center justify-center opacity-[0.025] select-none pointer-events-none">
+            <span className="text-6xl sm:text-7xl font-black rotate-[-32deg] tracking-widest uppercase whitespace-nowrap">
               TTU INDUSTRIAL LIAISON
             </span>
           </div>
 
-          {/* ========================================================= */}
-          {/* 1. OFFICIAL UNIVERSITY LETTERHEAD                          */}
-          {/* ========================================================= */}
-          <div className="flex items-center justify-between border-b-2 border-slate-900 pb-4 mb-6 gap-4">
-            <div className="flex items-center gap-4">
-              <img
-                src="/src/assets/TTU LOGO.png"
-                alt="Takoradi Technical University Logo"
-                className="h-20 w-auto object-contain shrink-0"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-              />
-              <div>
-                <h1 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight font-serif leading-tight">
-                  TAKORADI TECHNICAL UNIVERSITY
-                </h1>
-                <p className="text-xs sm:text-sm font-bold text-slate-800 uppercase tracking-wider font-sans mt-0.5">
-                  OFFICE OF THE INDUSTRIAL LIAISON OFFICER
-                </p>
-                <p className="text-[11px] text-slate-600 font-sans mt-0.5">
-                  P.O. Box 256, Takoradi, Western Region, Ghana • Tel: +233 (0) 312 022 983 / 984
-                </p>
-                <p className="text-[10px] text-slate-500 font-sans">
-                  Email: liaison@ttu.edu.gh • Web: www.ttu.edu.gh
-                </p>
+          <div className="relative z-10">
+            <header className="border-b-[3px] border-slate-950 pb-4 mb-6">
+              <div className="grid grid-cols-[82px_1fr_96px] items-center gap-4">
+                <img src={ttuLogo} alt="Takoradi Technical University Logo" className="h-20 w-20 object-contain" />
+                <div className="text-center">
+                  <h1 className="text-2xl font-black uppercase leading-tight tracking-normal">Takoradi Technical University</h1>
+                  <p className="mt-1 text-sm font-bold uppercase tracking-normal font-sans">Office of the Industrial Liaison Officer</p>
+                  <p className="mt-1 text-[11px] text-slate-700 font-sans">P.O. Box 256, Takoradi, Western Region, Ghana | Tel: +233 (0) 312 022 983 / 984</p>
+                  <p className="text-[10px] text-slate-600 font-sans">Email: liaison@ttu.edu.gh | Web: www.ttu.edu.gh</p>
+                </div>
+                <div className="flex flex-col items-center justify-center border border-slate-300 bg-slate-50 p-2 text-center font-sans">
+                  <QrCode className="w-9 h-9 text-slate-800" />
+                  <span className="mt-1 text-[8px] font-bold uppercase text-slate-700">E-Verified</span>
+                  <span className="text-[7px] font-mono text-slate-500 break-all">{refNumber}</span>
+                </div>
               </div>
-            </div>
+            </header>
 
-            {/* Electronic Verification QR / Stamp indicator */}
-            <div className="hidden sm:flex flex-col items-center justify-center p-2 border border-slate-300 rounded-lg bg-slate-50 text-center shrink-0">
-              <QrCode className="w-10 h-10 text-slate-800" />
-              <span className="text-[9px] font-sans font-bold text-slate-700 mt-1 uppercase tracking-wider">
-                E-VERIFIED
-              </span>
-              <span className="text-[8px] font-mono text-slate-500">
-                {refNumber}
-              </span>
-            </div>
-          </div>
+            <section className="mb-6 grid grid-cols-[1fr_auto] gap-6 text-sm font-sans">
+              <div className="space-y-1 leading-snug">
+                <p className="font-extrabold uppercase">{submission.letterAddressedTo || 'THE HUMAN RESOURCE MANAGER'}</p>
+                <p className="font-bold uppercase">{submission.companyName || 'HOST ORGANIZATION'}</p>
+                {submission.companyAddress && <p className="text-slate-700">{submission.companyAddress}</p>}
+                <p className="font-semibold uppercase text-slate-800">{submission.companyTown || 'TAKORADI'}</p>
+              </div>
 
-          {/* ========================================================= */}
-          {/* 2. DATE & RECIPIENT ADDRESS                               */}
-          {/* ========================================================= */}
-          <div className="flex justify-between items-start text-xs sm:text-sm font-sans mb-6 gap-4">
-            <div className="space-y-1">
-              <p className="font-extrabold uppercase text-slate-900 tracking-wide">
-                {submission.letterAddressedTo || 'THE HUMAN RESOURCE MANAGER'}
-              </p>
-              <p className="font-bold text-slate-900">
-                {submission.companyName || 'Host Organization'}
-              </p>
-              <p className="font-semibold uppercase text-slate-700">
-                {submission.companyTown || 'Accra / Takoradi'}
-              </p>
-              {submission.companyAddress && (
-                <p className="text-slate-600">{submission.companyAddress}</p>
-              )}
-            </div>
+              <div className="text-right space-y-1 leading-snug">
+                <p><span className="font-bold">Our Ref:</span> <span className="font-mono text-xs">{refNumber}</span></p>
+                <p><span className="font-bold">Date:</span> {formattedDate}</p>
+              </div>
+            </section>
 
-            <div className="text-right space-y-1 shrink-0 font-sans">
-              <p className="font-bold text-slate-900">
-                Our Ref: <span className="font-mono">{refNumber}</span>
-              </p>
-              <p className="font-semibold text-slate-700">
-                Date: <span className="font-medium">{formattedDate}</span>
-              </p>
-            </div>
-          </div>
-
-          {/* ========================================================= */}
-          {/* 3. SALUTATION & SUBJECT LINE                              */}
-          {/* ========================================================= */}
-          <div className="space-y-3 mb-5">
-            <p className="text-xs sm:text-sm font-sans text-slate-800">
-              Dear Sir/Madam,
-            </p>
-
-            <div className="text-center py-1">
-              <h2 className="text-sm sm:text-base font-black text-slate-950 underline uppercase tracking-wider font-serif">
-                PRACTICAL INDUSTRIAL TRAINING PROGRAMME FOR STUDENTS
+            <section className="mb-5 space-y-3">
+              <p className="text-sm font-sans">Dear Sir/Madam,</p>
+              <h2 className="text-center text-[15px] font-black uppercase underline tracking-normal">
+                Practical Industrial Training Programme for Students
               </h2>
-            </div>
-          </div>
+            </section>
 
-          {/* ========================================================= */}
-          {/* 4. BODY PARAGRAPHS (Official TTU Text)                    */}
-          {/* ========================================================= */}
-          <div className="space-y-3.5 text-xs sm:text-sm leading-relaxed text-slate-800 text-justify font-serif">
-            <p>
-              Students of Takoradi Technical University pursuing Bachelor of Technology (B.Tech) and Higher National Diploma (HND) programmes are expected to undergo practical industrial training in industry as part of the academic requirements for the award of their certificate.
-            </p>
+            <section className="space-y-3.5 text-[14px] leading-7 text-justify">
+              <p>
+                Students of Takoradi Technical University pursuing Bachelor of Technology (B.Tech) and Higher National Diploma (HND) programmes are expected to undergo practical industrial training in industry as part of the academic requirements for the award of their certificate.
+              </p>
+              <p>
+                It is believed that the attachment programme would bring positive industrial exposure to students. This exercise would enable students to put theory into practice and acquaint themselves with current technological developments in industry and commerce.
+              </p>
+              <p>
+                The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from <strong className="font-bold underline">{attachmentStartDate}</strong> to <strong className="font-bold underline">{attachmentEndDate}</strong>.
+              </p>
+            </section>
 
-            <p>
-              It is believed that the attachment programme would bring positive industrial exposure to students. This exercise would enable students to put theory into practice and acquaint themselves with current technological developments in industry and commerce.
-            </p>
+            <section className="my-6">
+              <p className="mb-2 text-xs font-bold uppercase tracking-normal font-sans">The student's particulars are as follows:</p>
+              <table className="w-full border-collapse border border-slate-950 text-sm font-sans">
+                <tbody>
+                  <tr className="bg-slate-50">
+                    <td className="w-[36%] border border-slate-950 px-3 py-2 font-bold">Registration Number</td>
+                    <td className="border border-slate-950 px-3 py-2 font-mono font-bold">{submission.studentRegNo || submission.studentId || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-950 px-3 py-2 font-bold">Name</td>
+                    <td className="border border-slate-950 px-3 py-2 font-bold uppercase">{submission.studentName}</td>
+                  </tr>
+                  <tr className="bg-slate-50">
+                    <td className="border border-slate-950 px-3 py-2 font-bold">Programme</td>
+                    <td className="border border-slate-950 px-3 py-2 font-semibold">{submission.department || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <td className="border border-slate-950 px-3 py-2 font-bold">Contact Number</td>
+                    <td className="border border-slate-950 px-3 py-2 font-mono font-semibold">{submission.studentPhone || 'N/A'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </section>
 
-            <p>
-              The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from{' '}
-              <strong className="font-sans font-bold text-slate-900 underline">
-                {submission.startDate || '15th January, 2026'}
-              </strong>{' '}
-              to{' '}
-              <strong className="font-sans font-bold text-slate-900 underline">
-                {submission.endDate || '15th June, 2026'}
-              </strong>.
-            </p>
-          </div>
+            <section className="space-y-3.5 text-[14px] leading-7 text-justify">
+              <p>
+                We request that the student should be made to familiarize himself/herself with all the related sections available in your organization.
+              </p>
+              <p>
+                For your information, all students at Takoradi Technical University are covered by a Group Personal Accident Insurance Policy during their official attachment period.
+              </p>
+              <p>We count on your usual cooperation.</p>
+            </section>
 
-          {/* ========================================================= */}
-          {/* 5. STUDENT PARTICULARS TABLE                              */}
-          {/* ========================================================= */}
-          <div className="my-6">
-            <p className="text-xs font-sans font-bold text-slate-900 uppercase tracking-wider mb-2">
-              The student's particulars are as follows:
-            </p>
-            <table className="w-full text-xs sm:text-sm border-collapse border border-slate-900 font-sans">
-              <tbody>
-                <tr className="border-b border-slate-900 bg-slate-50/70">
-                  <td className="w-1/3 py-2 px-3 font-bold text-slate-900 border-r border-slate-900">
-                    Registration Number:
-                  </td>
-                  <td className="py-2 px-3 font-mono font-bold text-slate-950">
-                    {submission.studentRegNo || submission.studentId || 'BC/GRD/22/012'}
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-900">
-                  <td className="w-1/3 py-2 px-3 font-bold text-slate-900 border-r border-slate-900">
-                    Name:
-                  </td>
-                  <td className="py-2 px-3 font-bold text-slate-950 uppercase">
-                    {submission.studentName}
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-900 bg-slate-50/70">
-                  <td className="w-1/3 py-2 px-3 font-bold text-slate-900 border-r border-slate-900">
-                    Programme:
-                  </td>
-                  <td className="py-2 px-3 font-semibold text-slate-900">
-                    {submission.department || 'Bachelor of Technology in Graphic Design'}
-                  </td>
-                </tr>
-                <tr className="border-b border-slate-900">
-                  <td className="w-1/3 py-2 px-3 font-bold text-slate-900 border-r border-slate-900">
-                    Contact Number:
-                  </td>
-                  <td className="py-2 px-3 font-mono font-semibold text-slate-900">
-                    {submission.studentPhone || '0502310663'}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* ========================================================= */}
-          {/* 6. INSTITUTIONAL SAFEGUARDS & INSURANCE CLAUSE            */}
-          {/* ========================================================= */}
-          <div className="space-y-3 text-xs sm:text-sm leading-relaxed text-slate-800 text-justify font-serif">
-            <p>
-              We request that the student should be made to familiarize himself/herself with all the related sections available in your organization.
-            </p>
-
-            <p className="bg-slate-50 border-l-4 border-slate-800 p-2.5 italic text-slate-900 text-xs sm:text-[13px] font-sans">
-              <strong>Insurance Notice:</strong> For your information, all students at Takoradi Technical University are covered by a Group Personal Accident Insurance Policy during their official attachment period.
-            </p>
-
-            <p>
-              We count on your usual cooperation.
-            </p>
-          </div>
-
-          {/* ========================================================= */}
-          {/* 7. OFFICIAL SIGN-OFF & STAMP BLOCK                        */}
-          {/* ========================================================= */}
-          <div className="mt-8 pt-4 flex flex-col sm:flex-row items-start justify-between gap-6 font-sans">
-            <div className="space-y-1">
-              <p className="text-xs sm:text-sm font-serif">Yours faithfully,</p>
-              
-              {/* Stamp & Signature graphic */}
-              <div className="pt-2 pb-1 relative">
-                <div className="text-xs font-script italic font-black text-blue-900 select-none text-xl leading-none">
-                  Albert Ofori-Boateng
+            <section className="mt-10 grid grid-cols-[1fr_220px] gap-6 font-sans">
+              <div>
+                <p className="text-sm font-serif">Yours faithfully,</p>
+                <div className="mt-5 mb-2 text-xl font-black italic text-blue-900 leading-none">Mark Kofi Aremu</div>
+                <div className="inline-block border-2 border-red-700 px-3 py-1 text-center text-[9px] font-bold uppercase tracking-normal text-red-800">
+                  Takoradi Technical University<br />Industrial Liaison Office<br />Officially Verified & Stamped
                 </div>
-                <div className="inline-block border-2 border-dashed border-red-700/80 rounded-lg px-3 py-1 mt-1.5 bg-red-50/40 text-[9px] font-bold text-red-800 uppercase tracking-widest text-center">
-                  TAKORADI TECHNICAL UNIVERSITY<br />
-                  ★ INDUSTRIAL LIAISON OFFICE ★<br />
-                  OFFICIALLY VERIFIED & STAMPED
-                </div>
+                <p className="mt-3 text-sm font-extrabold uppercase">Mark Kofi Aremu</p>
+                <p className="text-[11px] font-bold uppercase tracking-normal text-slate-700">Head, Industrial Liaison Department</p>
               </div>
 
-              <p className="font-extrabold text-xs sm:text-sm text-slate-950 uppercase pt-1">
-                Dr. Albert Ofori-Boateng
-              </p>
-              <p className="text-[11px] font-bold text-slate-700 uppercase tracking-wide">
-                Head, Industrial Liaison Department
-              </p>
-            </div>
+              <div className="self-end border border-slate-300 bg-slate-50 p-3 text-right text-xs">
+                <span className="text-[10px] uppercase font-bold text-slate-500">Student Signature Confirmation</span>
+                <p className="mt-1 text-base font-bold italic text-slate-950">{submission.studentSignature || submission.studentName}</p>
+                <p className="text-[10px] text-slate-500 font-mono">Submitted: {formattedDate}</p>
+              </div>
+            </section>
 
-            {/* Student electronic acknowledgment */}
-            <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 text-right space-y-1 text-xs self-end sm:self-auto min-w-[200px]">
-              <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">
-                Student Signature Confirmation
-              </span>
-              <p className="font-script font-bold text-base text-slate-900 italic">
-                {submission.studentSignature || submission.studentName}
-              </p>
-              <p className="text-[10px] text-slate-500 font-mono">
-                Submitted: {formattedDate}
-              </p>
-            </div>
+            <footer className="mt-8 border-t border-slate-300 pt-3 flex items-center justify-between gap-4 text-[9px] font-sans text-slate-500">
+              <span>Form TTU/IL-01 | Industrial Attachment Introductory Letter</span>
+              <span className="font-mono">Security Code: TTU-AUTH-{(submission.id || '01').toUpperCase()}</span>
+            </footer>
           </div>
-
-          {/* Footer Code */}
-          <div className="mt-8 pt-3 border-t border-slate-300 flex items-center justify-between text-[9px] font-sans text-slate-500">
-            <span>Form TTU/IL-01 • Industrial Attachment Introductory Letter</span>
-            <span>Security Code: TTU-AUTH-{(submission.id || '01').toUpperCase()}</span>
-          </div>
-
         </div>
       </div>
     </div>
   );
 }
+

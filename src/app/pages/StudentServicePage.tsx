@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { AttachmentLetterSubmission } from '../types';
+import ttuLogo from '../../assets/TTU LOGO.png';
 
 type StudentServiceKey =
   | 'fee-payments'
@@ -422,8 +423,15 @@ export function StudentServicePage() {
     return (
     <div className="card-clean rounded-xl overflow-hidden shadow-sm border border-border">
       {/* Title & Preview Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <h2 className="text-lg font-bold text-foreground">Industrial Liaison Attachment</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 border-b border-border bg-white">
+        <div className="flex items-center gap-3 min-w-0">
+          <img src={ttuLogo} alt="Takoradi Technical University Logo" className="h-12 w-12 object-contain shrink-0" />
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-foreground leading-tight">Industrial Liaison Attachment Letter</h2>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-normal">Office of the Industrial Liaison Officer</p>
+            <p className="text-xs text-muted-foreground">Issued by Mark Kofi Aremu</p>
+          </div>
+        </div>
         <button
           type="button"
           onClick={() => {
@@ -483,7 +491,7 @@ export function StudentServicePage() {
       {letterStep === 1 ? (
         <div>
           {/* Step 1 Fields */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 bg-white">
             <div className="space-y-4">
               {/* Company Name */}
               <div className="space-y-1">
@@ -495,8 +503,7 @@ export function StudentServicePage() {
                     setLetterFields(prev => ({ ...prev, companyName: e.target.value }));
                     setLetterErrors(prev => ({ ...prev, companyName: undefined }));
                   }}
-                  className={`h-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-base ${letterErrors.companyName ? 'border-red-500' : ''
-                    }`}
+                  className={`h-11 bg-input-background border border-input rounded-lg px-3 text-foreground text-sm ${letterErrors.companyName ? 'border-red-500' : ''}`}
                   placeholder="Enter Company Name"
                 />
                 {letterErrors.companyName && (
@@ -514,8 +521,7 @@ export function StudentServicePage() {
                     setLetterFields(prev => ({ ...prev, companyTown: e.target.value }));
                     setLetterErrors(prev => ({ ...prev, companyTown: undefined }));
                   }}
-                  className={`h-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-base ${letterErrors.companyTown ? 'border-red-500' : ''
-                    }`}
+                  className={`h-11 bg-input-background border border-input rounded-lg px-3 text-foreground text-sm ${letterErrors.companyTown ? 'border-red-500' : ''}`}
                   placeholder="Enter Town/City"
                 />
                 {letterErrors.companyTown && (
@@ -530,7 +536,7 @@ export function StudentServicePage() {
                   id="al-companyAddress"
                   value={letterFields.companyAddress}
                   onChange={e => setLetterFields(prev => ({ ...prev, companyAddress: e.target.value }))}
-                  className="h-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-base"
+                  className="h-11 bg-input-background border border-input rounded-lg px-3 text-foreground text-sm"
                   placeholder="Enter company full address (optional)"
                 />
               </div>
@@ -546,7 +552,7 @@ export function StudentServicePage() {
                   aria-label="Letter Addressed To"
                   value={letterFields.letterAddressedTo}
                   onChange={e => setLetterFields(prev => ({ ...prev, letterAddressedTo: e.target.value }))}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="flex h-11 w-full rounded-lg border border-input bg-input-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <option value="THE MANAGER">THE MANAGER</option>
                   <option value="THE GENERAL MANAGER">THE GENERAL MANAGER</option>
@@ -565,7 +571,7 @@ export function StudentServicePage() {
                   type="date"
                   value={letterFields.startDate}
                   onChange={e => setLetterFields(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="h-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-base"
+                  className="h-11 bg-input-background border border-input rounded-lg px-3 text-foreground text-sm"
                 />
               </div>
 
@@ -577,7 +583,7 @@ export function StudentServicePage() {
                   type="date"
                   value={letterFields.endDate}
                   onChange={e => setLetterFields(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="h-10 bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-base"
+                  className="h-11 bg-input-background border border-input rounded-lg px-3 text-foreground text-sm"
                 />
               </div>
             </div>
@@ -733,7 +739,7 @@ export function StudentServicePage() {
                 <div className="h-10 flex items-end">
                   <p className="font-bold text-slate-400 italic">Signature & Stamp</p>
                 </div>
-                <p className="font-bold text-slate-900">Dr. Albert Ofori-Boateng</p>
+                <p className="font-bold text-slate-900">Mark Kofi Aremu</p>
                 <p className="text-xs text-slate-500 uppercase">Head, Industrial Liaison Department</p>
               </div>
             </div>
@@ -910,7 +916,7 @@ export function StudentServicePage() {
                 aria-label="Company Zone"
                 value={fields.companyZone}
                 onChange={e => setField('companyZone', e.target.value)}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-11 w-full rounded-lg border border-input bg-input-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 {ZONES.map(z => <option key={z} value={z}>{z}</option>)}
               </select>
@@ -1218,6 +1224,9 @@ export function StudentServicePage() {
     </DashboardLayout>
   );
 }
+
+
+
 
 
 
