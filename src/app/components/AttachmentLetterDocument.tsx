@@ -116,9 +116,15 @@ export function AttachmentLetterDocument({
     const printContent = printRef.current;
     if (!printContent) return;
 
+    // Collect all stylesheets and style tags so Tailwind + fonts are preserved in print
+    const styleTags = Array.from(document.querySelectorAll('link[rel="stylesheet"], style'))
+      .map(el => el.outerHTML)
+      .join('\n');
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) {
-      toast.error('Please allow popups to print the letter.');
+      // Fallback: If popup blocker prevents opening a new window, trigger window.print directly
+      window.print();
       return;
     }
 
@@ -127,34 +133,36 @@ export function AttachmentLetterDocument({
       <html>
         <head>
           <title>TTU Attachment Letter - ${submission.studentName}</title>
+          ${styleTags}
           <style>
-            @page { size: A4; margin: 12mm; }
-            * { box-sizing: border-box; }
-            body {
+            @page { size: A4 portrait; margin: 10mm; }
+            * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+            html, body {
+              background: #fff !important;
+              color: #0f172a !important;
+              margin: 0 !important;
+              padding: 0 !important;
               font-family: 'Times New Roman', Times, serif;
-              color: #0f172a;
-              background: #fff;
-              margin: 0;
-              padding: 0;
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
             }
             .printable-card {
-              width: 186mm;
-              min-height: 273mm;
-              margin: 0 auto;
-              background: #fff;
+              width: 100% !important;
+              max-width: 190mm !important;
+              margin: 0 auto !important;
+              box-shadow: none !important;
+              border: none !important;
+              padding: 0 !important;
             }
-            table { width: 100%; border-collapse: collapse; }
-            td { border: 1px solid #0f172a; padding: 7px 10px; font-size: 12px; }
           </style>
         </head>
         <body>
           <div class="printable-card">${printContent.innerHTML}</div>
           <script>
             window.onload = function() {
-              window.print();
-              setTimeout(function() { window.close(); }, 500);
+              window.focus();
+              setTimeout(function() {
+                window.print();
+                setTimeout(function() { window.close(); }, 600);
+              }, 300);
             };
           </script>
         </body>
@@ -218,7 +226,7 @@ export function AttachmentLetterDocument({
       <div className="bg-slate-100 dark:bg-slate-950/30 border border-slate-200 rounded-xl p-3 sm:p-6 max-w-4xl mx-auto overflow-x-auto">
         <div
           ref={printRef}
-          className="relative mx-auto bg-white text-slate-950 font-serif shadow-sm border border-slate-300 px-7 py-8 sm:px-10 sm:py-9 w-full max-w-[794px] min-h-[1123px] overflow-hidden"
+          className="print-attachment-letter relative mx-auto bg-white text-slate-950 font-serif shadow-sm border border-slate-300 px-7 py-8 sm:px-10 sm:py-9 w-full max-w-[794px] min-h-[1123px] overflow-hidden"
         >
           <div className="absolute inset-0 flex items-center justify-center opacity-[0.025] select-none pointer-events-none">
             <span className="text-6xl sm:text-7xl font-black rotate-[-32deg] tracking-widest uppercase whitespace-nowrap">
@@ -336,6 +344,34 @@ export function AttachmentLetterDocument({
           </div>
         </div>
       </div>
+
+      {/* Embedded print styles for seamless browser printing */}
+      <style>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print-attachment-letter, .print-attachment-letter * {
+            visibility: visible;
+          }
+          .print-attachment-letter {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 10mm !important;
+            box-shadow: none !important;
+            border: none !important;
+            background: #fff !important;
+            color: #0f172a !important;
+          }
+          @page {
+            size: A4 portrait;
+            margin: 10mm;
+          }
+        }
+      `}</style>
     </div>
   );
 }

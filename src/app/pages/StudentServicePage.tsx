@@ -4,14 +4,16 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { AttachmentLetterDocument } from '../components/AttachmentLetterDocument';
 import {
   ArrowLeft, CheckCircle,
   FileSignature, Paperclip, Send, Settings, CreditCard,
-  ChevronRight,
+  ChevronRight, Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { AttachmentLetterSubmission } from '../types';
 
 type StudentServiceKey =
   | 'fee-payments'
@@ -88,7 +90,7 @@ export function StudentServicePage() {
   const { serviceKey } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { students, submitAssumptionForm, submitAttachmentLetter } = useData();
+  const { students, submitAssumptionForm, submitAttachmentLetter, attachmentLetterSubmissions } = useData();
 
   // ── Assumption form state ──────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -127,6 +129,7 @@ export function StudentServicePage() {
     studentSignature?: string;
   }>({});
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [selectedLetterForModal, setSelectedLetterForModal] = useState<AttachmentLetterSubmission | null>(null);
   const [isLetterSubmitting, setIsLetterSubmitting] = useState(false);
 
   if (!serviceKey || !(serviceKey in serviceMeta)) {
@@ -168,6 +171,7 @@ export function StudentServicePage() {
     if (!validateLetterStep2()) return;
     setIsLetterSubmitting(true);
     try {
+      const newLetterId = `letter-${Date.now()}`;
       await submitAttachmentLetter({
         studentId: studentData?.id || user?.id || '',
         studentName: studentData?.name || user?.name || 'Unknown',
@@ -180,8 +184,26 @@ export function StudentServicePage() {
         letterAddressedTo: letterFields.letterAddressedTo,
         studentSignature: letterFields.studentSignature,
       });
-      toast.success('Attachment Letter request submitted to the Industrial Liaison Office!');
-      navigate('/student');
+      toast.success('Attachment Letter submitted! Your official letter is ready to print or download as PDF.');
+      setSelectedLetterForModal({
+        id: newLetterId,
+        studentId: studentData?.id || user?.id || 'student1',
+        studentName: studentData?.name || user?.name || 'John Doe',
+        studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
+        studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
+        department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
+        academicLevel: studentData?.currentLevel || 3,
+        submittedAt: new Date().toISOString(),
+        status: 'verified',
+        companyName: letterFields.companyName || 'Host Organization',
+        companyTown: letterFields.companyTown || 'Accra',
+        letterAddressedTo: letterFields.letterAddressedTo || 'THE MANAGER',
+        startDate: '2023-09-11',
+        endDate: '2023-11-24',
+        studentSignature: letterFields.studentSignature || user?.name || studentData?.name || 'John Doe',
+        refNumber: `TTU/IL/AL/${new Date().getFullYear()}/001`,
+      });
+      setIsPreviewOpen(true);
     } catch {
       toast.error('Submission failed. Please try again.');
     } finally {
@@ -190,26 +212,66 @@ export function StudentServicePage() {
   };
 
   const renderAttachmentLetterForm = () => {
+    const myLetters = (attachmentLetterSubmissions || []).filter(l =>
+      l.studentId === studentData?.id ||
+      l.studentId === user?.id ||
+      l.studentName?.toLowerCase() === (studentData?.name || user?.name || '').toLowerCase()
+    );
+
+    const openPreview = (letter?: AttachmentLetterSubmission) => {
+      if (letter) {
+        setSelectedLetterForModal(letter);
+        setIsPreviewOpen(true);
+        return;
+      }
+      if (!validateLetterStep1()) {
+        toast.error('Please fill out Company Name and Town/City first.');
+        return;
+      }
+      setSelectedLetterForModal({
+        id: myLetters[0]?.id || 'preview-letter',
+        studentId: studentData?.id || user?.id || 'student1',
+        studentName: studentData?.name || user?.name || 'John Doe',
+        studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
+        studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
+        department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
+        academicLevel: studentData?.currentLevel || 3,
+        submittedAt: myLetters[0]?.submittedAt || new Date().toISOString(),
+        status: myLetters[0]?.status || 'verified',
+        companyName: letterFields.companyName || 'Host Organization',
+        companyTown: letterFields.companyTown || 'Accra',
+        letterAddressedTo: letterFields.letterAddressedTo || 'THE MANAGER',
+        startDate: myLetters[0]?.startDate || '2023-09-11',
+        endDate: myLetters[0]?.endDate || '2023-11-24',
+        studentSignature: letterFields.studentSignature || user?.name || studentData?.name || 'John Doe',
+        refNumber: myLetters[0]?.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/001`,
+      });
+      setIsPreviewOpen(true);
+    };
+
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         {/* Top Header Row matching screenshot */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-xl font-medium text-slate-700 dark:text-slate-200">
             Industrial Liaison Attachment
           </h2>
-          <button
-            type="button"
-            onClick={() => {
-              if (validateLetterStep1()) {
-                setIsPreviewOpen(true);
-              } else {
-                toast.error('Please fill out Company Name and Town/City first.');
-              }
-            }}
-            className="bg-[#7cb342] hover:bg-[#689f38] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded shadow-xs transition-colors cursor-pointer"
-          >
-            Are you done? Click to Preview Form
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => openPreview()}
+              className="bg-[#7cb342] hover:bg-[#689f38] text-white font-medium text-xs sm:text-sm px-4 py-2 rounded shadow-xs transition-colors cursor-pointer"
+            >
+              Are you done? Click to Preview Form
+            </button>
+            <button
+              type="button"
+              onClick={() => openPreview()}
+              className="bg-primary hover:bg-primary/90 text-white font-medium text-xs sm:text-sm px-4 py-2 rounded shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+            >
+              <Printer className="w-4 h-4" /> Print / PDF Letter
+            </button>
+          </div>
         </div>
 
         {/* Main Form Card */}
@@ -401,13 +463,20 @@ export function StudentServicePage() {
               </div>
 
               {/* Buttons */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setLetterStep(1)}
                   className="h-10 rounded-lg px-5 border border-border text-sm font-medium hover:bg-muted transition-colors cursor-pointer"
                 >
                   ← Back
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openPreview()}
+                  className="h-10 rounded-lg px-4 border border-blue-600 text-blue-600 dark:text-blue-400 font-semibold text-sm hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Printer className="w-4 h-4" /> Preview & Print PDF
                 </button>
                 <button
                   type="submit"
@@ -421,82 +490,78 @@ export function StudentServicePage() {
           )}
         </div>
 
-        {/* Preview Dialog */}
+        {/* Existing / Generated Attachment Letters */}
+        {myLetters.length > 0 && (
+          <div className="bg-white dark:bg-card border border-border rounded-xl p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                <Paperclip className="w-4 h-4 text-primary" />
+                Your Generated Attachment Letters ({myLetters.length})
+              </h3>
+              <span className="text-xs text-muted-foreground">Ready to Print & Download</span>
+            </div>
+            <div className="divide-y divide-border">
+              {myLetters.map(letter => (
+                <div key={letter.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">{letter.companyName}</span>
+                      <span className="text-xs text-muted-foreground font-mono">({letter.refNumber || 'REF PENDING'})</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {letter.letterAddressedTo} &bull; {letter.companyTown} &bull; Submitted: {new Date(letter.submittedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openPreview(letter)}
+                      className="px-3.5 py-2 rounded-lg bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                    >
+                      <Printer className="w-3.5 h-3.5" /> Print / Download PDF
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Preview & Print Letter Dialog */}
         <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-          <DialogContent className="max-w-2xl bg-white border border-border shadow-lg rounded-xl overflow-hidden p-0">
-            <DialogHeader className="p-5 border-b border-border bg-slate-50">
-              <DialogTitle className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <DialogContent className="max-w-4xl max-h-[92vh] overflow-y-auto bg-slate-50 dark:bg-card border border-border shadow-xl rounded-2xl p-4 sm:p-6">
+            <DialogHeader className="pb-3 border-b border-border">
+              <DialogTitle className="text-lg font-bold flex items-center gap-2">
                 <Paperclip className="w-5 h-5 text-primary" />
-                Introductory Letter Preview
+                Official Industrial Attachment Letter
               </DialogTitle>
-              <DialogDescription>
-                This is a draft of the official introductory letter that will be generated upon approval.
+              <DialogDescription className="text-xs">
+                Official Takoradi Technical University Introductory Letter. Use the buttons below to print or download as an official PDF.
               </DialogDescription>
             </DialogHeader>
 
-            <div className="p-8 max-h-[60vh] overflow-y-auto bg-white select-none">
-              <div className="text-center border-b-2 border-slate-900 pb-4 mb-6">
-                <h2 className="text-2xl font-bold text-slate-900 tracking-wide uppercase">Takoradi Technical University</h2>
-                <p className="text-sm font-semibold text-slate-700 tracking-wider uppercase">Office of the Industrial Liaison Officer</p>
-                <p className="text-xs text-slate-500 mt-1">P.O. Box 256, Takoradi, Ghana | Tel: +233 (0) 312 022 983</p>
-              </div>
-
-              <div className="space-y-4 text-sm text-slate-800">
-                <div className="flex justify-between">
-                  <div>
-                    <p className="font-bold uppercase">{letterFields.letterAddressedTo}</p>
-                    <p className="font-semibold">{letterFields.companyName}</p>
-                    <p className="font-semibold uppercase">{letterFields.companyTown}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">Date: {new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}</p>
-                    <p className="font-medium">Our Ref: TTU/IL/AL/{new Date().getFullYear()}</p>
-                  </div>
-                </div>
-
-                <p className="pt-4">Dear Sir/Madam,</p>
-
-                <p className="font-bold text-center underline uppercase tracking-wide py-2">
-                  Introductory Letter for Industrial Attachment - {user?.name || studentData?.name || 'STUDENT'}
-                </p>
-
-                <p className="leading-relaxed text-justify text-slate-700">
-                  We write to introduce the above-named student who is currently pursuing a{' '}
-                  <span className="font-bold text-slate-900">{user?.department || studentData?.department || 'your department'}</span>{' '}
-                  program at Takoradi Technical University.
-                </p>
-
-                <p className="leading-relaxed text-justify text-slate-700">
-                  As part of the academic curriculum for the award of a Bachelor of Technology degree, students are required to undergo a period of compulsory industrial training. This training aims to bridge the gap between academic theory and practical industrial application.
-                </p>
-
-                <p className="leading-relaxed text-justify text-slate-700">
-                  We would be most grateful if you could offer this student a placement in your organization for the attachment period. We are confident that they will prove to be diligent, respectful, and value-adding to your team.
-                </p>
-
-                <p className="leading-relaxed text-justify text-slate-700">
-                  Thank you for your partnership in training the next generation of industry leaders.
-                </p>
-
-                <div className="pt-8 space-y-1">
-                  <p>Yours faithfully,</p>
-                  <div className="h-10 flex items-end">
-                    <p className="font-bold text-slate-400 italic">Signature & Stamp</p>
-                  </div>
-                  <p className="font-bold text-slate-900">Mark Kofi Aremu</p>
-                  <p className="text-xs text-slate-500 uppercase">Head, Industrial Liaison Department</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-4 border-t border-border bg-slate-50 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsPreviewOpen(false)}
-                className="px-4 py-2 border border-border rounded-lg text-sm font-medium hover:bg-slate-100 transition-colors cursor-pointer"
-              >
-                Close Preview
-              </button>
+            <div className="pt-2">
+              <AttachmentLetterDocument
+                submission={selectedLetterForModal || {
+                  id: 'preview-letter',
+                  studentId: studentData?.id || user?.id || 'student1',
+                  studentName: studentData?.name || user?.name || 'John Doe',
+                  studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
+                  studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
+                  department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
+                  academicLevel: studentData?.currentLevel || 3,
+                  submittedAt: new Date().toISOString(),
+                  status: 'verified',
+                  companyName: letterFields.companyName || 'Host Organization',
+                  companyTown: letterFields.companyTown || 'Accra',
+                  letterAddressedTo: letterFields.letterAddressedTo || 'THE MANAGER',
+                  startDate: '2023-09-11',
+                  endDate: '2023-11-24',
+                  studentSignature: letterFields.studentSignature || user?.name || studentData?.name || 'John Doe',
+                  refNumber: `TTU/IL/AL/${new Date().getFullYear()}/001`,
+                }}
+                showActions={true}
+              />
             </div>
           </DialogContent>
         </Dialog>
