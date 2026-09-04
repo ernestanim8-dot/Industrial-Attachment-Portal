@@ -4,14 +4,12 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
-import { AttachmentLetterDocument } from '../components/AttachmentLetterDocument';
 import {
   ArrowLeft, CheckCircle,
   FileSignature, Paperclip, Send, Settings, CreditCard,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { AttachmentLetterSubmission } from '../types';
 
 type StudentServiceKey =
   | 'fee-payments'
@@ -88,7 +86,7 @@ export function StudentServicePage() {
   const { serviceKey } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { students, submitAssumptionForm, attachmentLetterSubmissions } = useData();
+  const { students, submitAssumptionForm } = useData();
 
   // ── Assumption form state ──────────────────────────────────────────────────
   const [step, setStep] = useState<1 | 2>(1);
@@ -125,34 +123,9 @@ export function StudentServicePage() {
     (user?.name && s.name.toLowerCase() === user.name.toLowerCase())
   ) || students[0];
 
-  // ── Find this student's existing attachment letter submission ──────────────
-  const existingLetter = attachmentLetterSubmissions.find(l =>
-    l.studentId === (studentData?.id || user?.id) ||
-    l.studentName.toLowerCase() === (studentData?.name || user?.name || '').toLowerCase()
-  );
 
   const renderAttachmentLetterForm = () => {
-    const letterToDisplay: AttachmentLetterSubmission = existingLetter || {
-      id: 'letter1',
-      studentId: studentData?.id || user?.id || 'student1',
-      studentName: studentData?.name || user?.name || 'John Doe',
-      studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
-      studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
-      department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
-      academicLevel: studentData?.currentLevel || 3,
-      submittedAt: new Date().toISOString(),
-      status: 'verified',
-      companyName: studentData?.assignedLocationName || 'Tech Corp Ltd',
-      companyTown: studentData?.assignedLocationCity || 'Accra',
-      companyAddress: studentData?.assignedLocationAddress || '12 Independence Avenue, Ridge, Accra',
-      letterAddressedTo: 'THE HUMAN RESOURCE MANAGER',
-      startDate: '2023-09-11',
-      endDate: '2023-11-24',
-      studentSignature: studentData?.name || user?.name || 'John Doe',
-      refNumber: 'TTU/IL/AL/2026/001',
-    };
-
-    return <AttachmentLetterDocument submission={letterToDisplay} showActions={true} />;
+    return null;
   };
 
   // ── Assumption form helpers ─────────────────────────────────────────────────
