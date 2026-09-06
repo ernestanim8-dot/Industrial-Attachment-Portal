@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate, useParams } from 'react-router';
+﻿import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -282,9 +282,8 @@ export function StudentServicePage() {
             <button
               type="button"
               onClick={() => setLetterStep(1)}
-              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${
-                letterStep === 1 ? 'bg-[#c62828]' : 'bg-[#c62828]/85 hover:bg-[#c62828]'
-              }`}
+              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${letterStep === 1 ? 'bg-[#c62828]' : 'bg-[#c62828]/85 hover:bg-[#c62828]'
+                }`}
             >
               <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shrink-0">
                 1
@@ -298,9 +297,8 @@ export function StudentServicePage() {
               onClick={() => {
                 if (validateLetterStep1()) setLetterStep(2);
               }}
-              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${
-                letterStep === 2 ? 'bg-[#1976d2]' : 'bg-[#2196f3] hover:bg-[#1e88e5]'
-              }`}
+              className={`flex items-center gap-3 px-6 py-3 text-sm font-semibold text-white transition-colors cursor-pointer ${letterStep === 2 ? 'bg-[#1976d2]' : 'bg-[#2196f3] hover:bg-[#1e88e5]'
+                }`}
             >
               <span className="w-6 h-6 rounded-full border-2 border-white flex items-center justify-center text-xs font-bold text-white shrink-0">
                 2
@@ -342,9 +340,8 @@ export function StudentServicePage() {
                           setLetterFields(prev => ({ ...prev, companyName: e.target.value }));
                           setLetterErrors(prev => ({ ...prev, companyName: undefined }));
                         }}
-                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${
-                          letterErrors.companyName ? 'border-red-500' : ''
-                        }`}
+                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${letterErrors.companyName ? 'border-red-500' : ''
+                          }`}
                         placeholder="Enter Company Name"
                       />
                       {letterErrors.companyName && (
@@ -364,9 +361,8 @@ export function StudentServicePage() {
                           setLetterFields(prev => ({ ...prev, companyTown: e.target.value }));
                           setLetterErrors(prev => ({ ...prev, companyTown: undefined }));
                         }}
-                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${
-                          letterErrors.companyTown ? 'border-red-500' : ''
-                        }`}
+                        className={`h-9 bg-transparent border-0 border-b border-slate-300 dark:border-slate-700 rounded-none focus-visible:ring-0 focus-visible:border-primary px-0 text-foreground text-sm sm:text-base ${letterErrors.companyTown ? 'border-red-500' : ''
+                          }`}
                         placeholder="Enter Town/City"
                       />
                       {letterErrors.companyTown && (
