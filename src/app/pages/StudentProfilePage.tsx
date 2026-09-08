@@ -12,12 +12,11 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
   User as UserIcon, GraduationCap, Building2, MapPin, Phone,
-  Mail, Calendar, Award, CheckCircle2, Clock, Edit3,
+  Mail, Calendar, Award, Edit3,
   Printer, ArrowLeft, ShieldCheck, Briefcase, AlertCircle,
-  FileText, Sparkles, HeartHandshake, BookOpen, ExternalLink,
-  Plus, X, Check
+  Sparkles, HeartHandshake, BookOpen, ExternalLink,
+  Plus
 } from 'lucide-react';
-import { toast } from 'sonner';
 import ttuLogo from '../../assets/TTU LOGO.jpg';
 
 export function StudentProfilePage() {
