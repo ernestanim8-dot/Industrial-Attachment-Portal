@@ -10,12 +10,21 @@ import { SupervisorDashboard } from './pages/SupervisorDashboard';
 import { SupervisorLocationsPage } from './pages/SupervisorLocationsPage';
 import { SupervisorAssessmentAnalyticsPage } from './pages/SupervisorAssessmentAnalyticsPage';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { StudentProfilePage } from './pages/StudentProfilePage';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <Login />,
+  },
+  {
+    path: '/student/profile',
+    element: (
+      <ProtectedRoute allowedRoles={['student', 'supervisor', 'admin']}>
+        <StudentProfilePage />
+      </ProtectedRoute>
+    ),
   },
   {
     path: '/student/your-reports-uploaded',

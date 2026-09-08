@@ -76,3 +76,33 @@ export const deleteUser: RequestHandler = async function(req, res, next): Promis
     res.status(500).json({ message: 'Server error while deleting user' });
   }
 };
+
+export const updateUserProfile: RequestHandler = async function(req, res, next): Promise<void> {
+  try {
+    const authReq = req as AuthRequest;
+    const targetUserId = req.params.id || authReq.user._id;
+
+    // Allow user to update their own profile, or admin to update any profile
+    if (authReq.user.role !== 'admin' && authReq.user._id.toString() !== targetUserId.toString()) {
+      res.status(403).json({ message: 'Forbidden: You can only update your own profile.' });
+      return;
+    }
+
+    const { phone, department, name } = req.body;
+    const updates: Record<string, unknown> = {};
+    if (phone !== undefined) updates.phone = phone;
+    if (department !== undefined) updates.department = department;
+    if (name !== undefined && typeof name === 'string' && name.trim()) updates.name = name.trim();
+
+    const updatedUser = await User.findByIdAndUpdate(targetUserId, updates, { new: true }).select('-passwordHash');
+    if (!updatedUser) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while updating profile' });
+  }
+};
+

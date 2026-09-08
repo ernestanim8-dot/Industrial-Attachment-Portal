@@ -15,7 +15,7 @@ import {
   ClipboardCheck, FileOutput,
   CreditCard, MapPin, ShieldCheck, AlertTriangle,
   Navigation, CheckCircle2, ShieldAlert,
-  FolderKanban
+  FolderKanban, User as UserIcon
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
@@ -178,7 +178,48 @@ export function StudentDashboard() {
 
   return (
     <DashboardLayout title="Student Dashboard">
-      <div className="space-y-8 max-w-7xl mx-auto p-4 md:p-6">
+      <div className="space-y-6 max-w-7xl mx-auto p-4 md:p-6">
+
+        {/* Student Profile Quick-Access Banner */}
+        <div className="bg-white dark:bg-card border border-border rounded-2xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative overflow-hidden">
+          <div className="absolute top-0 left-0 bottom-0 w-1.5 bg-primary" />
+          <div className="flex items-center gap-4 pl-1">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-linear-to-br from-primary to-indigo-700 text-white flex items-center justify-center text-xl sm:text-2xl font-black shadow-md shadow-primary/20 shrink-0">
+              {studentData?.name
+                ? studentData.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+                : 'ST'}
+            </div>
+            <div className="space-y-1 min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-lg sm:text-xl font-extrabold text-foreground truncate">
+                  Welcome back, {studentData?.name || 'Student'}!
+                </h2>
+                <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20 font-bold text-xs">
+                  Level {studentData?.currentLevel ? `${studentData.currentLevel}00` : '300'}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground truncate">
+                {studentData?.programme || studentData?.department || 'B.Tech in Graphic Design'} • Reg No: <strong className="text-foreground font-mono">{studentData?.registrationNumber || studentData?.studentId || 'BC/GRD/22/012'}</strong>
+              </p>
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-0.5">
+                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>Host: <strong className="text-foreground">{studentData?.assignedLocationName || studentData?.company || 'Tech Corp Ltd'}</strong></span>
+                <span className="hidden sm:inline">•</span>
+                <span className="hidden sm:inline text-primary font-medium">{studentData?.assignedLocationZone || 'Greater Accra Industrial Zone'}</span>
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 sm:self-center pl-1 sm:pl-0 shrink-0">
+            <Link to="/student/profile">
+              <Button size="sm" variant="outline" className="gap-2 text-xs font-semibold h-9">
+                <UserIcon className="w-4 h-4 text-primary" />
+                View Full Profile
+              </Button>
+            </Link>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map(s => {
             const Icon = s.icon;

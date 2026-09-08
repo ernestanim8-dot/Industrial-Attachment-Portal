@@ -3,9 +3,10 @@ import {
   GraduationCap, LogOut, Menu, X,
   LayoutDashboard, FileText, Bell, Users,
   Settings, BarChart2, ChevronRight, Wallet, Briefcase,
-  CreditCard, FileSignature, Paperclip, MapPin, TrendingUp, FolderKanban
+  CreditCard, FileSignature, Paperclip, MapPin, TrendingUp, FolderKanban,
+  User as UserIcon
 } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, Link } from 'react-router';
 import { useAuth } from '../context/AuthContext';
 import { NotificationCenter } from './NotificationCenter';
 import { ThemeToggle } from './ThemeToggle';
@@ -22,6 +23,7 @@ interface DashboardLayoutProps {
 const navItems: Record<string, { label: string; icon: React.ComponentType<{ className?: string }>; href: string }[]> = {
   student: [
     { label: 'Dashboard', icon: LayoutDashboard, href: '/student' },
+    { label: 'Student Profile', icon: UserIcon, href: '/student/profile' },
     { label: 'Progress History', icon: TrendingUp, href: '/student/progress' },
     { label: 'Your Reports Uploaded', icon: FileText, href: '/student/your-reports-uploaded' },
     { label: 'Daily report log', icon: FolderKanban, href: '/student/daily-report-log' },
@@ -225,19 +227,25 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
 
         {/* User card */}
         <div className="px-3 pb-4 border-t border-sidebar-border pt-4">
-          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent mb-1">
-            <Avatar className="w-8 h-8 shrink-0">
+          <Link
+            to={role === 'student' ? '/student/profile' : '#'}
+            onClick={() => setSidebarOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-sidebar-accent hover:bg-sidebar-accent/80 transition-colors mb-1 group block"
+            title={role === 'student' ? 'View Student Profile' : undefined}
+          >
+            <Avatar className="w-8 h-8 shrink-0 ring-1 ring-white/20">
               <AvatarFallback className="text-xs font-bold bg-primary text-white">
                 {user?.name ? getInitials(user.name) : 'U'}
               </AvatarFallback>
             </Avatar>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-white truncate">{user?.name || 'User'}</p>
+              <p className="text-sm font-semibold text-white truncate group-hover:text-primary-foreground">{user?.name || 'User'}</p>
               <span className={`inline-block text-[10px] px-1.5 py-0.5 rounded font-medium ${rc.color}`}>
                 {rc.label}
               </span>
             </div>
-          </div>
+            {role === 'student' && <ChevronRight className="w-3.5 h-3.5 text-white/40 group-hover:text-white" />}
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-white/50 hover:text-red-400 hover:bg-sidebar-accent transition-all duration-150"
@@ -268,6 +276,20 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <ThemeToggle />
             <NotificationCenter />
+            {role === 'student' && (
+              <Link
+                to="/student/profile"
+                className="flex items-center gap-2 p-1 pl-2 pr-2.5 rounded-full border border-border bg-secondary/60 hover:bg-secondary transition-colors text-xs font-semibold text-foreground"
+                title="My Profile"
+              >
+                <Avatar className="w-6 h-6">
+                  <AvatarFallback className="text-[10px] font-bold bg-primary text-white">
+                    {user?.name ? getInitials(user.name) : 'S'}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="hidden sm:inline truncate max-w-[100px]">{user?.name?.split(' ')[0] || 'Profile'}</span>
+              </Link>
+            )}
           </div>
         </header>
 
@@ -285,7 +307,7 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps): Reac
         </main>
 
         <footer className="border-t border-border bg-white dark:bg-card py-2.5 px-4 sm:px-6 text-center text-xs text-muted-foreground">
-          © 2026 Takoradi Technical University — Industrial Attachment Assessment Portal
+          © 2026 Takoradi Technical University — Industrial Attachment Assessment Portal (Supervised by Mr. Ernest Doe Kudjordjie)
         </footer>
       </div>
     </div>

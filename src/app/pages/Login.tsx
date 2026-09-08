@@ -95,8 +95,8 @@ export const Login = (): React.ReactElement => {
             </div>
           </div>
 
-          <p className="relative z-10 text-white/25 text-xs">
-            © 2026 Takoradi Technical University
+          <p className="relative z-10 text-white/40 text-xs">
+            © 2026 Takoradi Technical University (Supervised by Mr. Ernest Doe Kudjordjie)
           </p>
         </div>
 

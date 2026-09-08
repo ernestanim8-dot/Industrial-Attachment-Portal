@@ -46,6 +46,8 @@ interface DataContextType {
   reviewDailyReport: (id: string, feedback: string, grade?: number) => void;
   addWeeklyReport: (report: Omit<WeeklyReportUpdate, 'id'>) => void;
   addMonthlyReport: (report: Omit<MonthlyReport, 'id'>) => void;
+  // Student Profile Management
+  updateStudentProfile: (studentId: string, updates: Partial<Student>) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -58,11 +60,38 @@ const initialStudents: Student[] = [
     name: 'John Doe',
     role: 'student',
     studentId: 'STU001',
+    registrationNumber: 'BC/GRD/22/012',
+    indexNumber: '0722000045',
     department: 'Bachelor of Technology in Graphic Design',
+    programme: 'B.Tech in Graphic Design',
+    faculty: 'Faculty of Applied Arts and Technology',
+    academicYear: '2025/2026',
+    semester: '2nd Semester',
+    hallOfResidence: 'Authur Hall (Room B12)',
+    address: 'House No. 14, West Tanokrom, Takoradi',
+    phone: '+233 50 231 0663',
+    personalEmail: 'johndoe.tech@gmail.com',
+    bio: 'Dedicated Graphic Design undergraduate specializing in visual corporate branding, UI/UX systems, and interactive digital interfaces. Currently undergoing industrial attachment at Tech Corp Ltd.',
+    skills: ['UI/UX Design', 'Brand Identity', 'Adobe Illustrator', 'Figma', 'Prepress Workflow', 'Typography', 'Color Calibration'],
     supervisorId: 'supervisor1',
+    academicSupervisorName: 'Mrs. Josephine Sarpong- Nyantakyi',
+    academicSupervisorEmail: 'josephine.sarpong@university.edu',
+    academicSupervisorPhone: '+233 20 123 4567',
     company: 'Tech Corp Ltd',
     attachmentStartDate: '2026-01-15',
     attachmentEndDate: '2026-06-15',
+    industrySupervisor: {
+      name: 'Mr. Alex Mensah',
+      title: 'Lead Creative Director & Brand Strategist',
+      phone: '+233 54 889 0123',
+      email: 'alex.mensah@techcorp.com.gh',
+    },
+    emergencyContact: {
+      name: 'Mr. Samuel Doe',
+      relationship: 'Father / Guardian',
+      phone: '+233 24 456 7890',
+      email: 'samuel.doe@gmail.com',
+    },
     progress: 65,
     currentLevel: 3,
     currentProjectTitle: 'Corporate Brand Identity & Digital UI Kit Design',
@@ -846,12 +875,30 @@ const buildMonthlyReports = (weeklyUpdates: WeeklyReportUpdate[]): MonthlyReport
   }).sort((a, b) => a.monthNumber - b.monthNumber);
 };
 
+const getInitialStudents = (): Student[] => {
+  try {
+    const cached = localStorage.getItem('ttu_student_profiles');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return initialStudents.map(initS => {
+          const found = parsed.find((p: Student) => p.id === initS.id || p.email === initS.email);
+          return found ? { ...initS, ...found } : initS;
+        });
+      }
+    }
+  } catch {
+    // fallback to initial
+  }
+  return initialStudents;
+};
+
 export function DataProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [reports, setReports] = useState<Report[]>(initialReports);
   const [assessments, setAssessments] = useState<Assessment[]>(initialAssessments);
   const [notifications, setNotifications] = useState<Notification[]>(initialNotifications);
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+  const [students, setStudents] = useState<Student[]>(getInitialStudents);
   const [supervisors, setSupervisors] = useState<Supervisor[]>(initialSupervisors);
   const [assumptionSubmissions, setAssumptionSubmissions] = useState<AssumptionSubmission[]>(initialAssumptions);
   const [attachmentLetterSubmissions, setAttachmentLetterSubmissions] = useState<AttachmentLetterSubmission[]>(initialAttachmentLetters);
@@ -1489,6 +1536,34 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     toast.success('Daily report feedback saved successfully!');
   };
 
+  const updateStudentProfile = async (studentId: string, updates: Partial<Student>) => {
+    setStudents(prev => {
+      const updated = prev.map(s => {
+        if (s.id === studentId || s.studentId === studentId || (s.email && updates.email && s.email.toLowerCase() === updates.email.toLowerCase())) {
+          return { ...s, ...updates };
+        }
+        return s;
+      });
+      try {
+        localStorage.setItem('ttu_student_profiles', JSON.stringify(updated));
+      } catch (err) {
+        console.warn('Failed to cache student profiles to localStorage', err);
+      }
+      return updated;
+    });
+
+    try {
+      await fetchApi(`/users/${studentId}/profile`, {
+        method: 'PUT',
+        body: JSON.stringify(updates),
+      });
+    } catch {
+      // Offline fallback
+    }
+
+    toast.success('Student profile updated successfully!');
+  };
+
   const weeklyUpdates = buildWeeklyUpdates(dailyReports, missingDailyReports);
   const monthlyReports = buildMonthlyReports(weeklyUpdates);
 
@@ -1528,6 +1603,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         addWeeklyReport,
         addMonthlyReport,
         reviewDailyReport,
+        updateStudentProfile,
       }}
     >
       {children}

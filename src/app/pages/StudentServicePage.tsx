@@ -1,4 +1,4 @@
-﻿import { Link, Navigate, useNavigate, useParams } from 'react-router';
+import { Link, Navigate, useNavigate, useParams } from 'react-router';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
@@ -172,34 +172,42 @@ export function StudentServicePage() {
     setIsLetterSubmitting(true);
     try {
       const newLetterId = `letter-${Date.now()}`;
+      const startDate = studentData?.attachmentStartDate || '2026-01-15';
+      const endDate = studentData?.attachmentEndDate || '2026-06-15';
+      const studentRegNo = studentData?.registrationNumber || studentData?.studentId || 'BC/GRD/22/012';
+      const studentPhone = studentData?.phone || (studentData as { phone?: string })?.phone || '0502310663';
+      const department = studentData?.programme || studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design';
+
       await submitAttachmentLetter({
         studentId: studentData?.id || user?.id || '',
         studentName: studentData?.name || user?.name || 'Unknown',
-        studentRegNo: studentData?.studentId || '',
-        studentPhone: (studentData as { phone?: string })?.phone || '',
-        department: studentData?.department || user?.department || 'Unknown Department',
-        academicLevel: studentData?.currentLevel || 1,
+        studentRegNo,
+        studentPhone,
+        department,
+        academicLevel: studentData?.currentLevel || 3,
         companyName: letterFields.companyName,
         companyTown: letterFields.companyTown,
         letterAddressedTo: letterFields.letterAddressedTo,
         studentSignature: letterFields.studentSignature,
+        startDate,
+        endDate,
       });
       toast.success('Attachment Letter submitted! Your official letter is ready to print or download as PDF.');
       setSelectedLetterForModal({
         id: newLetterId,
         studentId: studentData?.id || user?.id || 'student1',
         studentName: studentData?.name || user?.name || 'John Doe',
-        studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
-        studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
-        department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
+        studentRegNo,
+        studentPhone,
+        department,
         academicLevel: studentData?.currentLevel || 3,
         submittedAt: new Date().toISOString(),
         status: 'verified',
         companyName: letterFields.companyName || 'Host Organization',
         companyTown: letterFields.companyTown || 'Accra',
         letterAddressedTo: letterFields.letterAddressedTo || 'THE MANAGER',
-        startDate: '2023-09-11',
-        endDate: '2023-11-24',
+        startDate,
+        endDate,
         studentSignature: letterFields.studentSignature || user?.name || studentData?.name || 'John Doe',
         refNumber: `TTU/IL/AL/${new Date().getFullYear()}/001`,
       });
@@ -228,21 +236,27 @@ export function StudentServicePage() {
         toast.error('Please fill out Company Name and Town/City first.');
         return;
       }
+      const startDate = myLetters[0]?.startDate || studentData?.attachmentStartDate || '2026-01-15';
+      const endDate = myLetters[0]?.endDate || studentData?.attachmentEndDate || '2026-06-15';
+      const studentRegNo = studentData?.registrationNumber || studentData?.studentId || 'BC/GRD/22/012';
+      const studentPhone = studentData?.phone || (studentData as { phone?: string })?.phone || '0502310663';
+      const department = studentData?.programme || studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design';
+
       setSelectedLetterForModal({
         id: myLetters[0]?.id || 'preview-letter',
         studentId: studentData?.id || user?.id || 'student1',
         studentName: studentData?.name || user?.name || 'John Doe',
-        studentRegNo: studentData?.studentId || 'BC/GRD/22/012',
-        studentPhone: (studentData as { phone?: string })?.phone || '0502310663',
-        department: studentData?.department || user?.department || 'Bachelor of Technology in Graphic Design',
+        studentRegNo,
+        studentPhone,
+        department,
         academicLevel: studentData?.currentLevel || 3,
         submittedAt: myLetters[0]?.submittedAt || new Date().toISOString(),
         status: myLetters[0]?.status || 'verified',
         companyName: letterFields.companyName || 'Host Organization',
         companyTown: letterFields.companyTown || 'Accra',
         letterAddressedTo: letterFields.letterAddressedTo || 'THE MANAGER',
-        startDate: myLetters[0]?.startDate || '2023-09-11',
-        endDate: myLetters[0]?.endDate || '2023-11-24',
+        startDate,
+        endDate,
         studentSignature: letterFields.studentSignature || user?.name || studentData?.name || 'John Doe',
         refNumber: myLetters[0]?.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/001`,
       });

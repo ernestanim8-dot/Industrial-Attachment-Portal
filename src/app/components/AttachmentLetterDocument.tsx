@@ -93,11 +93,14 @@ export function AttachmentLetterDocument({
   }, []);
 
   const formattedDate = React.useMemo(() => {
-    return formatDateOrFallback(submission.submittedAt, '24 January 2026');
+    return formatDateOrFallback(
+      submission.submittedAt,
+      new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+    );
   }, [submission.submittedAt]);
 
-  const attachmentStartDate = formatOrdinalDate(submission.startDate, '11th September, 2023');
-  const attachmentEndDate = formatOrdinalDate(submission.endDate, '24th November, 2023');
+  const attachmentStartDate = formatOrdinalDate(submission.startDate, '15th January, 2026');
+  const attachmentEndDate = formatOrdinalDate(submission.endDate, '15th June, 2026');
   const refNumber = submission.refNumber || `TTU/IL/AL/${new Date().getFullYear()}/${(submission.id || '001').slice(-3).padStart(3, '0').toUpperCase()}`;
 
   // ── Download PDF ──────────────────────────────────────────────────────────
@@ -109,43 +112,45 @@ export function AttachmentLetterDocument({
     try {
       const element = printRef.current;
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 2.5,
         useCORS: true,
         allowTaint: true,
         logging: false,
         backgroundColor: '#ffffff',
         imageTimeout: 15000,
+        windowWidth: 794,
       });
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL('image/png', 1.0);
       const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const imgWidth = pdfWidth;
       const imgHeight = (canvas.height * pdfWidth) / canvas.width;
 
-      // Multi-page support
-      if (imgHeight <= pdfHeight) {
-        pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+      // Ensure exact fit for single-page letters (prevent 2nd blank page)
+      if (imgHeight <= pdfHeight + 10) {
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, Math.min(imgHeight, pdfHeight));
       } else {
         let yOffset = 0;
         let remaining = imgHeight;
         let page = 0;
         while (remaining > 0) {
           if (page > 0) pdf.addPage();
-          pdf.addImage(imgData, 'PNG', 0, -yOffset, imgWidth, imgHeight);
+          pdf.addImage(imgData, 'PNG', 0, -yOffset, pdfWidth, imgHeight);
           yOffset += pdfHeight;
           remaining -= pdfHeight;
           page++;
         }
       }
 
-      const fileName = `TTU_Attachment_Letter_${submission.studentName.replace(/\s+/g, '_')}_${submission.studentRegNo || 'STU'}.pdf`;
+      const cleanRegNo = (submission.studentRegNo || submission.studentId || 'STU').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const cleanName = submission.studentName.replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `TTU_Attachment_Letter_${cleanName}_${cleanRegNo}.pdf`;
       pdf.save(fileName);
       toast.success('Official Attachment Letter PDF downloaded!');
     } catch (err) {
       console.error('PDF generation error:', err);
-      toast.error('PDF failed. Use Print → Save as PDF instead.');
+      toast.error('PDF generation failed. Use Print → Save as PDF instead.');
     } finally {
       setIsGeneratingPdf(false);
     }
@@ -253,35 +258,39 @@ export function AttachmentLetterDocument({
 
             <section className="space-y-3.5 text-[14px] leading-7 text-justify">
               <p>
-                Students of Takoradi Technical University pursuing Bachelor of Technology(B.Tech) are expected to undergo practical industrial training in industry as part of the requirements for the award of their certificate.
+                Students of Takoradi Technical University pursuing Bachelor of Technology (B.Tech) are expected to undergo practical industrial training in industry as part of the requirements for the award of their certificate.
               </p>
               <p>
                 It is believed that the attachment programme would bring positive industrial exposure to students. This exercise would enable students to put theory into practice and acquaint themselves with current technological development in industry and commerce.
               </p>
               <p>
-                The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from <strong className="font-bold underline">{attachmentStartDate}</strong> - <strong className="font-bold underline">{attachmentEndDate}</strong>.
+                The University would, therefore, be grateful if you could consider the under-mentioned student to undertake his/her industrial attachment programme in your organization from <strong className="font-bold underline">{attachmentStartDate}</strong> to <strong className="font-bold underline">{attachmentEndDate}</strong>.
               </p>
             </section>
 
-            <section className="my-6">
-              <p className="mb-2 text-xs font-bold uppercase tracking-normal font-sans">The student's particulars are as follows:</p>
-              <table className="w-full border-collapse border border-slate-950 text-sm font-sans">
+            <section className="my-5">
+              <p className="mb-2 text-xs font-bold uppercase tracking-normal font-sans text-slate-800">The student's particulars are as follows:</p>
+              <table className="w-full border-collapse border border-slate-900 text-sm font-sans">
                 <tbody>
                   <tr className="bg-slate-50">
-                    <td className="w-[36%] border border-slate-950 px-3 py-2 font-bold">REGISTRATION NUMBER:</td>
-                    <td className="border border-slate-950 px-3 py-2 font-mono font-bold">{submission.studentRegNo || submission.studentId || 'N/A'}</td>
+                    <td className="w-[36%] border border-slate-900 px-3 py-2 font-bold">REGISTRATION NUMBER:</td>
+                    <td className="border border-slate-900 px-3 py-2 font-mono font-bold">{submission.studentRegNo || submission.studentId || 'N/A'}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-950 px-3 py-2 font-bold">NAME:</td>
-                    <td className="border border-slate-950 px-3 py-2 font-bold uppercase">{submission.studentName}</td>
+                    <td className="border border-slate-900 px-3 py-2 font-bold">NAME:</td>
+                    <td className="border border-slate-900 px-3 py-2 font-bold uppercase">{submission.studentName}</td>
                   </tr>
                   <tr className="bg-slate-50">
-                    <td className="border border-slate-950 px-3 py-2 font-bold">PROGRAMME:</td>
-                    <td className="border border-slate-950 px-3 py-2 font-semibold">{submission.department || 'N/A'}</td>
+                    <td className="border border-slate-900 px-3 py-2 font-bold">PROGRAMME:</td>
+                    <td className="border border-slate-900 px-3 py-2 font-semibold">{submission.department || 'Bachelor of Technology in Graphic Design'}</td>
                   </tr>
                   <tr>
-                    <td className="border border-slate-950 px-3 py-2 font-bold">CONTACT NUMBER:</td>
-                    <td className="border border-slate-950 px-3 py-2 font-mono font-semibold">{submission.studentPhone || 'N/A'}</td>
+                    <td className="border border-slate-900 px-3 py-2 font-bold">ACADEMIC LEVEL:</td>
+                    <td className="border border-slate-900 px-3 py-2 font-semibold">Level {submission.academicLevel ? `${submission.academicLevel}00` : '300'}</td>
+                  </tr>
+                  <tr className="bg-slate-50">
+                    <td className="border border-slate-900 px-3 py-2 font-bold">CONTACT NUMBER:</td>
+                    <td className="border border-slate-900 px-3 py-2 font-mono font-semibold">{submission.studentPhone || 'N/A'}</td>
                   </tr>
                 </tbody>
               </table>

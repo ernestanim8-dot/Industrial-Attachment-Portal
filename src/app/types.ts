@@ -10,6 +10,21 @@ export interface User {
   studentId?: string;
   department?: string;
   avatarUrl?: string;
+  phone?: string;
+}
+
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+  email?: string;
+}
+
+export interface IndustrySupervisorInfo {
+  name: string;
+  title?: string;
+  phone?: string;
+  email?: string;
 }
 
 export interface LevelProjectReport {
@@ -89,6 +104,23 @@ export interface Student extends User {
   dailyLocationStatus?: 'on_site' | 'off_site' | 'not_checked_in';
   lastCheckInTime?: string;
   lastCheckInAddress?: string;
+  // Extended Student Profile Details
+  personalEmail?: string;
+  registrationNumber?: string;
+  indexNumber?: string;
+  programme?: string;
+  faculty?: string;
+  academicYear?: string;
+  semester?: string;
+  hallOfResidence?: string;
+  address?: string;
+  bio?: string;
+  skills?: string[];
+  emergencyContact?: EmergencyContact;
+  industrySupervisor?: IndustrySupervisorInfo;
+  academicSupervisorName?: string;
+  academicSupervisorEmail?: string;
+  academicSupervisorPhone?: string;
 }
 
 export interface Supervisor extends User {
