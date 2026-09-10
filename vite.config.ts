@@ -24,10 +24,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Core React runtime
-          'react-vendor': ['react', 'react-dom', 'react-router', 'react-router-dom'],
-          // UI component libraries
-          'ui-vendor': [
+          // Core runtime & UI libraries
+          'vendor': [
+            'react',
+            'react-dom',
+            'react-router',
+            'react-router-dom',
             '@radix-ui/react-dialog',
             '@radix-ui/react-dropdown-menu',
             '@radix-ui/react-select',
@@ -42,11 +44,10 @@ export default defineConfig({
           'pdf': ['jspdf', 'html2canvas'],
           // Real-time / socket
           'socket': ['socket.io-client'],
-          // Animation library
-          'motion': ['motion'],
         },
       },
     },
+    chunkSizeWarningLimit: 1000,
   },
 })
 

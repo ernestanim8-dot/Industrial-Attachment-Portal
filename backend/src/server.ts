@@ -1,10 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import mongoose from 'mongoose';
 import http from 'http';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
+import { checkSupabaseConnection, isSupabaseConfigured } from './supabase';
 import authRoutes from './routes/auth';
 import reportRoutes from './routes/reports';
 import userRoutes from './routes/users';
@@ -15,7 +15,11 @@ import attachmentLetterRoutes from './routes/attachmentLetters';
 import locationRoutes from './routes/locations';
 import dailyReportRoutes from './routes/dailyReports';
 import { initSocket } from './utils/socketService';
+import path from 'path';
 
+// Load backend/.env whether started from root or from backend folder
+dotenv.config({ path: path.resolve(process.cwd(), 'backend/.env') });
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
 dotenv.config();
 
 // Ensure JWT_SECRET is configured
@@ -80,34 +84,27 @@ app.get('/', (req, res) => {
 
 // Database Connection
 async function connectDB() {
-  try {
-    if (process.env.MONGODB_URI) {
-      await mongoose.connect(process.env.MONGODB_URI, { serverSelectionTimeoutMS: 2000 });
-      console.log('Connected to MongoDB');
+  console.log('Checking Supabase connection...');
+  const { connected, message } = await checkSupabaseConnection();
+
+  if (connected) {
+    console.log(`[Supabase] ${message}`);
+    // Seed database in non-production environments if connected
+    if (process.env.NODE_ENV !== 'production') {
+      const { seedDB } = await import('./seed');
+      await seedDB();
     } else {
-      throw new Error('No MONGODB_URI specified');
+      console.log('Production mode detected: skipping automatic database seeding.');
     }
-  } catch (err) {
-    console.warn('Local MongoDB not available, starting in-memory database...');
-    process.env.MONGOMS_DOWNLOAD_TIMEOUT = '600000';
-    process.env.MONGOMS_LAUNCH_TIMEOUT = '600000';
-    const { MongoMemoryServer } = await import('mongodb-memory-server');
-    const mongoServer = await MongoMemoryServer.create({
-      instance: {
-        dbName: 'ttu-attachment-portal',
-      },
-    });
-    const memUri = mongoServer.getUri();
-    await mongoose.connect(memUri);
-    console.log(`Connected to in-memory MongoDB at ${memUri}`);
-  }
-  
-  // Seed database in non-production environments
-  if (process.env.NODE_ENV !== 'production') {
-    const { seedDB } = await import('./seed');
-    await seedDB();
   } else {
-    console.log('Production mode detected: skipping automatic database seeding.');
+    console.warn('\n=============================================================');
+    console.warn('⚠️  [SUPABASE NOTICE]');
+    console.warn(message);
+    console.warn('To connect to Supabase:');
+    console.warn('1. Create a project at https://supabase.com');
+    console.warn('2. Run the SQL schema in backend/supabase/schema.sql');
+    console.warn('3. Add SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to backend/.env');
+    console.warn('=============================================================\n');
   }
 }
 
@@ -116,3 +113,4 @@ connectDB().then(() => {
     console.log(`Server is running on port ${PORT}`);
   });
 });
+

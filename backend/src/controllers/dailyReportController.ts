@@ -57,7 +57,7 @@ export const getDailyReports = async (req: AuthRequest, res: Response): Promise<
       query = { studentId: { $in: studentIds } };
     }
 
-    const reports = await DailyReport.find(query).sort({ date: -1, createdAt: -1 });
+    const reports = await DailyReport.find(query).sort({ date: -1 });
     res.json(reports);
   } catch (error) {
     res.status(500).json({ message: 'Server error while fetching daily reports' });

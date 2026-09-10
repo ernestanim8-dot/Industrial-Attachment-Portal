@@ -43,8 +43,9 @@ export const Login = (): React.ReactElement => {
       const role = await login(loginEmail, loginPassword, loginRole);
       toast.success('Welcome back!');
       navigateToDashboard(role);
-    } catch {
-      toast.error('Invalid credentials. Please try again.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Invalid credentials. Please check your email and password.';
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -138,12 +139,12 @@ export const Login = (): React.ReactElement => {
 
             <div className="space-y-1.5">
               <Label htmlFor="login-email">
-                {loginRole === 'student' ? 'Student Index Number' : 'Staff ID'}
+                Email or Username
               </Label>
               <Input
                 id="login-email"
                 type="text"
-                placeholder={loginRole === 'student' ? 'Index Number (e.g. 0420000001)' : 'Staff ID (e.g. STF-001)'}
+                placeholder={loginRole === 'student' ? 'e.g. john.student@ttu.edu.gh or john.student' : 'e.g. admin@ttu.edu.gh or kwame.s@ttu.edu.gh'}
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
                 required

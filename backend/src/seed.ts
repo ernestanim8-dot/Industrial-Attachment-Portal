@@ -1,4 +1,3 @@
-import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 import User from './models/User';
@@ -8,6 +7,7 @@ import Location from './models/Location';
 import DailyReport from './models/DailyReport';
 import Assumption from './models/Assumption';
 import AttachmentLetter from './models/AttachmentLetter';
+import Notification from './models/Notification';
 
 dotenv.config();
 
@@ -19,15 +19,15 @@ export const seedDB = async () => {
       return;
     }
 
-    // Clear existing data (in case there's partial data or it's a fresh in-memory db)
     console.log('Purging existing data...');
-    await User.deleteMany({});
-    await Report.deleteMany({});
+    await Notification.deleteMany({});
     await Assessment.deleteMany({});
-    await Location.deleteMany({});
+    await Report.deleteMany({});
     await DailyReport.deleteMany({});
     await Assumption.deleteMany({});
     await AttachmentLetter.deleteMany({});
+    await Location.deleteMany({});
+    await User.deleteMany({});
 
     // Hash distinct passwords for each role
     const salt = await bcrypt.genSalt(10);
@@ -71,7 +71,7 @@ export const seedDB = async () => {
       passwordHash: studentPasswordHash,
       role: 'student',
       department: 'Bachelor of Technology in Graphic Design',
-      assignedSupervisorId: supervisor1._id
+      assignedSupervisorId: supervisor1.id,
     });
 
     const student2 = await User.create({
@@ -80,42 +80,43 @@ export const seedDB = async () => {
       passwordHash: studentPasswordHash,
       role: 'student',
       department: 'Bachelor of Technology in Painting',
-      assignedSupervisorId: supervisor2._id
+      assignedSupervisorId: supervisor2.id,
     });
 
     console.log('Seeding Reports...');
     // Create Reports
     const report1 = await Report.create({
-      studentId: student1._id,
+      studentId: student1.id,
       title: 'Week 1 Attachment Report',
       description: 'Learned the basics of UI/UX design workflow in Figma.',
       fileUrl: 'https://example.com/report1.pdf',
       type: 'weekly',
       status: 'pending',
-      weekNumber: 1
+      weekNumber: 1,
     });
 
     const report2 = await Report.create({
-      studentId: student2._id,
+      studentId: student2.id,
       title: 'Monthly Progress Report',
       description: 'Completed the first month. Focused heavily on color theory and canvas preparation.',
       fileUrl: 'https://example.com/report2.pdf',
       type: 'monthly',
-      status: 'graded'
+      status: 'graded',
+      grade: 85,
     });
 
     console.log('Seeding Assessments...');
     // Create Assessment for the graded report
     await Assessment.create({
-      reportId: report2._id,
-      supervisorId: supervisor2._id,
+      reportId: report2.id,
+      supervisorId: supervisor2.id,
       feedback: 'Excellent progress for your first month. Keep up the good work!',
       grade: 85,
       criteria: {
         content: 85,
         presentation: 90,
-        understanding: 80
-      }
+        understanding: 80,
+      },
     });
 
     console.log('Seeding Locations...');
@@ -158,7 +159,7 @@ export const seedDB = async () => {
     console.log('Seeding Daily Reports...');
     await DailyReport.create([
       {
-        studentId: student1._id,
+        studentId: student1.id,
         studentName: student1.name,
         date: '2026-08-03',
         dayOfWeek: 'Monday',
@@ -175,7 +176,7 @@ export const seedDB = async () => {
         locationVerified: true,
       },
       {
-        studentId: student1._id,
+        studentId: student1.id,
         studentName: student1.name,
         date: '2026-08-04',
         dayOfWeek: 'Tuesday',
@@ -193,7 +194,7 @@ export const seedDB = async () => {
       },
     ]);
 
-    console.log('Database seeded successfully!');
+    console.log('Database seeded successfully in Supabase!');
     console.log('------------------------------------------------');
     console.log('Login credentials for testing:');
     console.log('Admin: admin@ttu.edu.gh / AdminPass2026!');
@@ -202,7 +203,6 @@ export const seedDB = async () => {
     console.log('Student 1: john.student@ttu.edu.gh / StudentPass123');
     console.log('Student 2: jane.student@ttu.edu.gh / StudentPass123');
     console.log('------------------------------------------------');
-    
   } catch (error) {
     console.error('Error seeding database:', error);
   }

@@ -9,7 +9,9 @@ services:
         value: 18.0.0
       - key: PORT
         value: 8080
-      - key: MONGODB_URI
+      - key: SUPABASE_URL
+        fromContext: env
+      - key: SUPABASE_SERVICE_ROLE_KEY
         fromContext: env
       - key: JWT_SECRET
         fromContext: env

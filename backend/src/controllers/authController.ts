@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User';
+import { supabase } from '../supabase';
 
 const generateToken = (id: string) => {
   return jwt.sign({ id }, process.env.JWT_SECRET as string, { expiresIn: '30d' });
@@ -73,11 +74,11 @@ export const register = async (req: Request, res: Response): Promise<void> => {
     });
 
     res.status(201).json({
-      _id: user._id,
+      _id: user.id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id.toString()),
+      token: generateToken(user.id),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -93,17 +94,33 @@ export const login = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const normalizedEmail = email.trim().toLowerCase();
-    const user = await User.findOne({ email: normalizedEmail }).select('+passwordHash');
+    const rawInput = email.trim();
+    const normalizedInput = rawInput.toLowerCase();
 
-    if (user && (await bcrypt.compare(password, user.passwordHash))) {
+    // Fetch user flexibly by exact email, prefix, or phone
+    let queryBuilder = supabase.from('users').select('*');
+    if (rawInput.includes('@')) {
+      queryBuilder = queryBuilder.ilike('email', normalizedInput);
+    } else {
+      // Support entering just username (e.g. 'admin' or 'john.student') or phone
+      queryBuilder = queryBuilder.or(`email.ilike.${normalizedInput}@ttu.edu.gh,email.ilike.${normalizedInput},phone.ilike.%${rawInput}%`);
+    }
+
+    const { data: userRows, error: userError } = await queryBuilder.limit(1);
+    const userData = userRows && userRows.length > 0 ? userRows[0] : null;
+
+    if (userError && userError.code !== 'PGRST116') {
+      throw userError;
+    }
+
+    if (userData && userData.password_hash && (await bcrypt.compare(password, userData.password_hash))) {
       res.json({
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        department: user.department,
-        token: generateToken(user._id.toString()),
+        _id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        role: userData.role,
+        department: userData.department,
+        token: generateToken(userData.id),
       });
     } else {
       res.status(401).json({ message: 'Invalid email or password' });
@@ -122,43 +139,53 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const user = await User.findById(userId).select('+otp +otpExpiry');
+    // Fetch user with otp fields directly
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
 
-    if (!user) {
+    if (userError && userError.code !== 'PGRST116') throw userError;
+
+    if (!userData) {
       res.status(404).json({ message: 'User not found.' });
       return;
     }
 
-    if (!user.otp || !user.otpExpiry) {
+    if (!userData.otp || !userData.otp_expiry) {
       res.status(400).json({ message: 'No OTP was requested. Please log in again.' });
       return;
     }
 
-    if (new Date() > user.otpExpiry) {
-      user.otp = undefined;
-      user.otpExpiry = undefined;
-      await user.save();
+    if (new Date() > new Date(userData.otp_expiry)) {
+      // Clear expired OTP
+      await supabase
+        .from('users')
+        .update({ otp: null, otp_expiry: null })
+        .eq('id', userId);
       res.status(400).json({ message: 'OTP has expired. Please log in again.' });
       return;
     }
 
-    if (user.otp !== otp.trim()) {
+    if (userData.otp !== otp.trim()) {
       res.status(400).json({ message: 'Incorrect OTP. Please try again.' });
       return;
     }
 
     // OTP is valid — clear it and issue full JWT
-    user.otp = undefined;
-    user.otpExpiry = undefined;
-    await user.save();
+    await supabase
+      .from('users')
+      .update({ otp: null, otp_expiry: null })
+      .eq('id', userId);
 
     res.json({
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      department: user.department,
-      token: generateToken(user._id.toString()),
+      _id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      department: userData.department,
+      token: generateToken(userData.id),
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -168,10 +195,30 @@ export const verifyOtp = async (req: Request, res: Response): Promise<void> => {
 export const getMe = async (req: Request, res: Response): Promise<void> => {
   try {
     // @ts-ignore
-    const user = await User.findById(req.user.id).select('-passwordHash -otp -otpExpiry');
-    res.json(user);
+    const userId = req.user.id || req.user._id;
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, name, email, role, department, phone, assigned_supervisor_id, created_at, updated_at')
+      .eq('id', String(userId))
+      .maybeSingle();
+
+    if (error && error.code !== 'PGRST116') throw error;
+    if (!data) {
+      res.status(404).json({ message: 'User not found' });
+      return;
+    }
+
+    res.json({
+      id: data.id,
+      _id: data.id,
+      name: data.name,
+      email: data.email,
+      role: data.role,
+      department: data.department,
+      phone: data.phone,
+      assignedSupervisorId: data.assigned_supervisor_id,
+    });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
 };
-
