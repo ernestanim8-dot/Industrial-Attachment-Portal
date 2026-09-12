@@ -144,7 +144,7 @@ export const Login = (): React.ReactElement => {
               <Input
                 id="login-email"
                 type="text"
-                placeholder={loginRole === 'student' ? 'e.g. john.student@ttu.edu.gh or john.student' : 'e.g. admin@ttu.edu.gh or kwame.s@ttu.edu.gh'}
+                placeholder="Enter your email or username"
                 value={loginEmail}
                 onChange={e => setLoginEmail(e.target.value)}
                 required

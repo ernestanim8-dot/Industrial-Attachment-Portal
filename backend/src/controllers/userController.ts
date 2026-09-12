@@ -37,24 +37,54 @@ export const getAllUsers: RequestHandler = async function(req, res, next): Promi
   }
 };
 
+export const getSupervisors: RequestHandler = async function(req, res, next): Promise<void> {
+  try {
+    const supervisors = await User.find({ role: 'supervisor' }).select('-passwordHash');
+    res.json(supervisors);
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while fetching supervisors' });
+  }
+};
+
 export const assignSupervisor: RequestHandler = async function(req, res, next): Promise<void> {
   try {
     const authReq = req as AuthRequest;
-    if (authReq.user.role !== 'admin') {
-      res.status(403).json({ message: 'Only admins can assign supervisors' });
+    const { supervisorId } = req.body;
+    const targetStudentId = req.params.id;
+
+    if (!supervisorId) {
+      res.status(400).json({ message: 'supervisorId is required' });
       return;
     }
-    const { supervisorId } = req.body;
-    const user = await User.findByIdAndUpdate(req.params.id, { assignedSupervisorId: supervisorId }, { new: true }).select('-passwordHash');
+
+    // Permission check: Admin can assign any, supervisor can claim to themselves, student can link themselves
+    const isAdmin = authReq.user.role === 'admin';
+    const isSupervisorSelfClaim = authReq.user.role === 'supervisor' && String(supervisorId) === String(authReq.user._id);
+    const isStudentSelfLink = authReq.user.role === 'student' && String(targetStudentId) === String(authReq.user._id);
+
+    if (!isAdmin && !isSupervisorSelfClaim && !isStudentSelfLink) {
+      res.status(403).json({ message: 'Forbidden: You do not have permission to perform this supervisor assignment' });
+      return;
+    }
+
+    const user = await User.findByIdAndUpdate(targetStudentId, { assignedSupervisorId: supervisorId }, { new: true }).select('-passwordHash');
     
-    // Notify student
+    // Notify student & supervisor
     if (user) {
       const supervisor = await User.findById(supervisorId);
       await Notification.create({
         recipientId: user._id,
-        message: `You have been assigned to supervisor: ${supervisor?.name || 'Assigned'}`,
+        message: `You have been linked to supervisor: ${supervisor?.name || 'Assigned Supervisor'}`,
         type: 'supervisor_assigned'
       });
+
+      if (supervisor) {
+        await Notification.create({
+          recipientId: supervisor._id,
+          message: `Student ${user.name} is now linked to your supervision roster.`,
+          type: 'supervisor_assigned'
+        });
+      }
     }
 
     res.json(user);

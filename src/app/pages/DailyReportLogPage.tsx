@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import {
   ArrowLeft, FileText, Calendar, CheckCircle2,
-  Clock, XCircle, Upload, Plus, Trash2
+  Clock, XCircle, Upload, Plus, Trash2, UserCheck
 } from 'lucide-react';
 import { DashboardLayout } from '../components/DashboardLayout';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +12,9 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '../components/ui/select';
 import {
   Dialog, DialogContent, DialogDescription,
   DialogHeader, DialogTitle
@@ -40,6 +43,8 @@ export function DailyReportLogPage() {
   const { user } = useAuth();
   const {
     students,
+    supervisors,
+    assignSupervisor,
     dailyReports,
     missingDailyReports,
     weeklyUpdates,
@@ -61,6 +66,7 @@ export function DailyReportLogPage() {
   const [dailyChallenges, setDailyChallenges] = useState('');
   const [dailyHours, setDailyHours] = useState('8');
   const [dailyTools, setDailyTools] = useState('');
+  const [chosenSupervisorId, setChosenSupervisorId] = useState('');
 
   const [isPeriodicUploadOpen, setIsPeriodicUploadOpen] = useState(false);
   const [periodicKind, setPeriodicKind] = useState<'weekly' | 'monthly'>('weekly');
@@ -146,9 +152,15 @@ export function DailyReportLogPage() {
     const date = new Date(`${dailyDate}T00:00:00`);
     const isLate = dailyDate < todayStr || (dailyDate === todayStr && new Date().getHours() >= 17);
 
+    const targetSupId = chosenSupervisorId || studentData.supervisorId || supervisors[0]?.id;
+    if (targetSupId && targetSupId !== studentData.supervisorId) {
+      assignSupervisor(studentData.id, targetSupId);
+    }
+
     addDailyReport({
       studentId: studentData.id,
       studentName: studentData.name,
+      supervisorId: targetSupId,
       date: dailyDate,
       dayOfWeek: date.toLocaleDateString('default', { weekday: 'long' }),
       weekNumber: getWeekNumber(dailyDate),
@@ -308,6 +320,31 @@ export function DailyReportLogPage() {
                         <div className="space-y-1.5"><Label htmlFor="dailyDate">Working Date</Label><Input id="dailyDate" type="date" value={dailyDate} onChange={event => setDailyDate(event.target.value)} required /></div>
                         <div className="space-y-1.5"><Label htmlFor="dailyHours">Hours Worked</Label><Input id="dailyHours" type="number" min="1" max="24" value={dailyHours} onChange={event => setDailyHours(event.target.value)} required /></div>
                       </div>
+                      <div className="space-y-1.5 p-3 rounded-xl bg-primary/5 border border-primary/20">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="supervisorSelect" className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                            <UserCheck className="w-4 h-4 text-primary" />
+                            Submitting to Academic Supervisor:
+                          </Label>
+                          <span className="text-[10px] text-primary font-bold uppercase tracking-wider">Direct Review</span>
+                        </div>
+                        <Select
+                          value={chosenSupervisorId || studentData?.supervisorId || supervisors[0]?.id || ''}
+                          onValueChange={setChosenSupervisorId}
+                        >
+                          <SelectTrigger id="supervisorSelect" className="h-10 bg-background text-xs">
+                            <SelectValue placeholder="Select your supervisor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {supervisors.map(sup => (
+                              <SelectItem key={sup.id} value={sup.id} className="text-xs">
+                                {sup.name} — {sup.department || 'Supervisor'}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
                       <div className="space-y-1.5"><Label htmlFor="dailyTitle">Report Title</Label><Input id="dailyTitle" placeholder="e.g. System Integration and Testing" value={dailyTitle} onChange={event => setDailyTitle(event.target.value)} required /></div>
                       <div className="space-y-1.5"><Label htmlFor="dailyTasks">Tasks Completed</Label><Textarea id="dailyTasks" rows={4} placeholder="Describe specific tasks completed today..." value={dailyTasks} onChange={event => setDailyTasks(event.target.value)} required /></div>
                       <div className="space-y-1.5"><Label htmlFor="dailySkills">Skills Acquired</Label><Input id="dailySkills" placeholder="e.g. React hooks, TypeScript" value={dailySkills} onChange={event => setDailySkills(event.target.value)} /></div>

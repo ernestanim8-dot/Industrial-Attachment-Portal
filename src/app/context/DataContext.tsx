@@ -953,6 +953,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           fetchedCheckIns,
           fetchedDailyReports,
           fetchedNotifications,
+          fetchedSupervisors,
         ] = await Promise.allSettled([
           fetchApi('/reports'),
           fetchApi('/assumptions'),
@@ -961,6 +962,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
           fetchApi('/locations/check-ins'),
           fetchApi('/daily-reports'),
           fetchApi('/notifications'),
+          fetchApi('/users/supervisors'),
         ]);
 
         if (fetchedReports.status === 'fulfilled' && Array.isArray(fetchedReports.value) && fetchedReports.value.length > 0) {
@@ -983,6 +985,113 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
         }
         if (fetchedNotifications.status === 'fulfilled' && Array.isArray(fetchedNotifications.value) && fetchedNotifications.value.length > 0) {
           setNotifications(fetchedNotifications.value.map((n: Notification & { _id?: string }) => ({ ...n, id: n._id || n.id })));
+        }
+        if (fetchedSupervisors.status === 'fulfilled' && Array.isArray(fetchedSupervisors.value) && fetchedSupervisors.value.length > 0) {
+          const apiSupervisors: Supervisor[] = (fetchedSupervisors.value as Array<Record<string, unknown>>).map((s) => ({
+            id: String(s.id || s._id),
+            email: String(s.email),
+            name: String(s.name),
+            role: 'supervisor',
+            department: String(s.department || 'Bachelor of Technology in Graphic Design'),
+            phone: String(s.phone || '+233 20 000 0000'),
+            assignedStudents: [],
+          }));
+
+          setSupervisors(prev => {
+            const merged = [...prev];
+            apiSupervisors.forEach(apiSup => {
+              const idx = merged.findIndex(m => m.id === apiSup.id || m.email.toLowerCase() === apiSup.email.toLowerCase());
+              if (idx >= 0) {
+                merged[idx] = { ...merged[idx], ...apiSup, assignedStudents: merged[idx].assignedStudents };
+              } else {
+                merged.unshift(apiSup);
+              }
+            });
+            return merged;
+          });
+        }
+
+        // Dynamically ensure the logged-in user is present in students or supervisors
+        if (user) {
+          if (user.role === 'supervisor') {
+            setSupervisors(prev => {
+              const existing = prev.find(s => s.id === user.id || s.email.toLowerCase() === user.email.toLowerCase());
+              if (existing) {
+                // Make sure the supervisor is linked to all students in their department
+                return prev.map(s => {
+                  if (s.id !== existing.id) return s;
+                  // Find all students whose supervisorId matches or whose department matches this supervisor
+                  const deptStudentIds = initialStudents
+                    .filter(st => st.supervisorId === existing.id || st.department === (user.department || existing.department))
+                    .map(st => st.id);
+                  const merged = Array.from(new Set([...s.assignedStudents, ...deptStudentIds]));
+                  return { ...s, assignedStudents: merged };
+                });
+              }
+              // New supervisor — link to students in their department
+              const userDept = user.department || 'Bachelor of Technology in Graphic Design';
+              const deptStudentIds = initialStudents
+                .filter(st => st.department === userDept)
+                .map(st => st.id);
+              return [
+                {
+                  id: user.id,
+                  email: user.email,
+                  name: user.name || 'Academic Supervisor',
+                  role: 'supervisor' as const,
+                  department: userDept,
+                  phone: '+233 20 000 0000',
+                  assignedStudents: deptStudentIds.length > 0 ? deptStudentIds : ['student1', 'student2'],
+                },
+                ...prev,
+              ];
+            });
+          } else if (user.role === 'student') {
+            setStudents(prev => {
+              const exists = prev.find(s => s.id === user.id || s.email.toLowerCase() === user.email.toLowerCase());
+              if (exists) {
+                // Ensure this student is reflected in their supervisor's assignedStudents list
+                const supId = exists.supervisorId;
+                if (supId) {
+                  setSupervisors(sups => sups.map(sup =>
+                    sup.id === supId && !sup.assignedStudents.includes(exists.id)
+                      ? { ...sup, assignedStudents: [...sup.assignedStudents, exists.id] }
+                      : sup
+                  ));
+                }
+                return prev;
+              }
+              // New student — link to a supervisor in their department
+              const userDept = user.department || 'Bachelor of Technology in Graphic Design';
+              const deptSup = initialSupervisors.find(sup => sup.department === userDept) || initialSupervisors[0];
+              const newStudentId = user.id;
+              // Link this student to the supervisor
+              setSupervisors(sups => sups.map(sup =>
+                sup.id === deptSup.id && !sup.assignedStudents.includes(newStudentId)
+                  ? { ...sup, assignedStudents: [...sup.assignedStudents, newStudentId] }
+                  : sup
+              ));
+              return [
+                {
+                  id: newStudentId,
+                  email: user.email,
+                  name: user.name || 'Attachment Student',
+                  role: 'student' as const,
+                  studentId: user.studentId || `STU${Date.now().toString().slice(-4)}`,
+                  department: userDept,
+                  supervisorId: deptSup.id,
+                  academicSupervisorName: deptSup.name,
+                  academicSupervisorEmail: deptSup.email,
+                  company: 'Tech Corp Ltd',
+                  progress: 60,
+                  currentLevel: 3,
+                  currentProjectTitle: 'Corporate Brand Identity & Digital UI Kit Design',
+                  currentProjectDescription: 'Developing design systems and interactive UI components for industrial attachment.',
+                },
+                ...prev,
+              ];
+            });
+          }
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
@@ -1132,36 +1241,55 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const assignSupervisor = async (studentId: string, supervisorId: string) => {
+    const targetSupervisor = supervisors.find(sup => sup.id === supervisorId || sup.email === supervisorId);
+
     setStudents(prev =>
-      prev.map(s => (s.id === studentId ? { ...s, supervisorId } : s))
+      prev.map(s => (s.id === studentId || s.email === studentId ? {
+        ...s,
+        supervisorId,
+        academicSupervisorName: targetSupervisor?.name,
+        academicSupervisorEmail: targetSupervisor?.email,
+        academicSupervisorPhone: targetSupervisor?.phone,
+      } : s))
     );
+
     setSupervisors(prev =>
-      prev.map(sup =>
-        sup.id === supervisorId
-          ? { ...sup, assignedStudents: [...sup.assignedStudents, studentId] }
-          : sup
-      )
+      prev.map(sup => {
+        const isMatch = sup.id === supervisorId || sup.email === supervisorId;
+        if (isMatch) {
+          return { ...sup, assignedStudents: Array.from(new Set([...sup.assignedStudents, studentId])) };
+        }
+        return { ...sup, assignedStudents: sup.assignedStudents.filter(id => id !== studentId) };
+      })
     );
 
     try {
-      await fetchApi(`/users/${studentId}/assign`, {
+      await fetchApi(`/users/${studentId}/assign-supervisor`, {
         method: 'PUT',
         body: JSON.stringify({ supervisorId }),
       });
     } catch {
-      // Offline fallback
+      try {
+        await fetchApi(`/users/${studentId}/assign`, {
+          method: 'PUT',
+          body: JSON.stringify({ supervisorId }),
+        });
+      } catch {
+        // Offline fallback already updated local state
+      }
     }
 
     const newNotif: Notification = {
       id: `notif${Date.now()}`,
       userId: studentId,
       title: 'Supervisor Assigned',
-      message: `A supervisor has been assigned to your industrial attachment`,
+      message: `You have been linked to supervisor ${targetSupervisor?.name || 'Academic Supervisor'}.`,
       type: 'assignment',
       read: false,
       createdAt: new Date().toISOString(),
     };
-    setNotifications(prev => [...prev, newNotif]);
+    setNotifications(prev => [newNotif, ...prev]);
+    toast.success(`Successfully assigned to ${targetSupervisor?.name || 'Supervisor'}!`);
   };
 
   const addStudent = (student: Omit<Student, 'id' | 'progress'>) => {
@@ -1457,10 +1585,18 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
   const addDailyReport = async (reportData: Omit<DailyReport, 'id' | 'submittedAt'>) => {
     let newDaily: DailyReport;
+    const student = students.find(s => s.id === reportData.studentId || (user && s.email.toLowerCase() === user.email.toLowerCase()));
+    const resolvedSupervisorId = (reportData as { supervisorId?: string }).supervisorId || student?.supervisorId || supervisors[0]?.id;
+
+    const payload = {
+      ...reportData,
+      supervisorId: resolvedSupervisorId,
+    };
+
     try {
       const created = await fetchApi('/daily-reports', {
         method: 'POST',
-        body: JSON.stringify(reportData),
+        body: JSON.stringify(payload),
       });
       newDaily = {
         ...created,
@@ -1468,7 +1604,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       };
     } catch {
       newDaily = {
-        ...reportData,
+        ...payload,
         id: `dr_${Date.now()}`,
         submittedAt: new Date().toISOString(),
         status: reportData.status || 'submitted',
@@ -1480,17 +1616,16 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
 
     // If this date was marked as missing, remove it from missing list
     setMissingDailyReports(prev => prev.map(m =>
-      m.studentId === reportData.studentId && m.date === reportData.date
+      (m.studentId === reportData.studentId || (student && m.studentId === student.id)) && m.date === reportData.date
         ? { ...m, status: 'late_submitted' }
         : m
     ));
 
     // Send supervisor notification
-    const student = students.find(s => s.id === reportData.studentId);
-    if (student?.supervisorId) {
+    if (resolvedSupervisorId) {
       const newNotif: Notification = {
         id: `notif${Date.now()}`,
-        userId: student.supervisorId,
+        userId: resolvedSupervisorId,
         title: 'New Daily Report Submitted',
         message: `${reportData.studentName} submitted daily report for ${reportData.dayOfWeek} (${reportData.date}).`,
         type: 'report_submitted',
@@ -1500,7 +1635,7 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       setNotifications(prev => [newNotif, ...prev]);
     }
 
-    toast.success(`Daily report for ${reportData.dayOfWeek} submitted!`);
+    toast.success(`Daily report for ${reportData.dayOfWeek} submitted to supervisor!`);
   };
 
   const addWeeklyReport = () => {
@@ -1512,6 +1647,9 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
   };
 
   const reviewDailyReport = async (id: string, feedback: string, grade?: number) => {
+    // Find the report to get studentId before update
+    const reportToReview = dailyReports.find(dr => dr.id === id);
+
     setDailyReports(prev => prev.map(dr => {
       if (dr.id === id) {
         return {
@@ -1533,7 +1671,23 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
       // Offline fallback
     }
 
-    toast.success('Daily report feedback saved successfully!');
+    // Notify the student
+    if (reportToReview) {
+      const studentNotif: Notification = {
+        id: `notif${Date.now()}`,
+        userId: reportToReview.studentId,
+        title: grade !== undefined ? 'Daily Report Graded' : 'Daily Report Reviewed',
+        message: grade !== undefined
+          ? `Your daily report for ${reportToReview.dayOfWeek} (${reportToReview.date}) received a grade of ${grade}/100. Feedback: "${feedback}"`
+          : `Your daily report for ${reportToReview.dayOfWeek} (${reportToReview.date}) was reviewed. Feedback: "${feedback}"`,
+        type: grade !== undefined ? 'assessment' : 'feedback',
+        read: false,
+        createdAt: new Date().toISOString(),
+      };
+      setNotifications(prev => [studentNotif, ...prev]);
+    }
+
+    toast.success(grade !== undefined ? `Daily report graded: ${grade}/100` : 'Feedback submitted to student!');
   };
 
   const updateStudentProfile = async (studentId: string, updates: Partial<Student>) => {

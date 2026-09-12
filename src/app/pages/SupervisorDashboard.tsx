@@ -11,7 +11,7 @@ import { Textarea } from '../components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
 import { PrintableReport } from '../components/PrintableReport';
-import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, CheckCircle2, FolderKanban, BarChart2 } from 'lucide-react';
+import { Eye, Users, Clock, FileText, CheckCircle, Download, Calendar, Star, TrendingUp, MapPin, Building2, MapPinCheck, CheckCircle2, FolderKanban, BarChart2, ClipboardList, MessageSquare } from 'lucide-react';
 import { Report, Student, DailyReport } from '../types';
 import { downloadApiFile } from '../api';
 import { Badge } from '../components/ui/badge';
@@ -47,6 +47,12 @@ export function SupervisorDashboard() {
   const supervisorData = supervisors.find(s => s.email === user?.email);
   const assignedStudents = students.filter(st => supervisorData?.assignedStudents.includes(st.id));
   const supervisorReports = reports.filter(r => assignedStudents.some(st => st.id === r.studentId));
+
+  // Daily reports from all assigned students
+  const supervisorDailyReports = dailyReports
+    .filter(dr => assignedStudents.some(st => st.id === dr.studentId))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  const pendingDailyReports = supervisorDailyReports.filter(dr => dr.status === 'submitted' || dr.status === 'late');
 
   const pendingReports = supervisorReports.filter(r => r.status === 'pending');
   const reviewedReports = supervisorReports.filter(r => r.status === 'reviewed');
@@ -178,9 +184,9 @@ export function SupervisorDashboard() {
 
   const stats = [
     { label: 'Assigned Students', value: assignedStudents.length, icon: Users, gradient: 'stat-card-blue' },
-    { label: 'Pending Reports', value: pendingReports.length, icon: Clock, gradient: 'stat-card-amber' },
-    { label: 'Reviewed', value: reviewedReports.length, icon: FileText, gradient: 'stat-card-violet' },
-    { label: 'Graded', value: gradedReports.length, icon: CheckCircle, gradient: 'stat-card-green' },
+    { label: 'Daily Pending Review', value: pendingDailyReports.length, icon: ClipboardList, gradient: 'stat-card-amber' },
+    { label: 'Reviewed Reports', value: reviewedReports.length, icon: FileText, gradient: 'stat-card-violet' },
+    { label: 'Graded Reports', value: gradedReports.length, icon: CheckCircle, gradient: 'stat-card-green' },
   ];
 
   return (
@@ -246,7 +252,100 @@ export function SupervisorDashboard() {
           </Link>
         </div>
 
-        {/* Assigned Students */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        {/* DAILY WORK SUBMISSIONS SECTION */}
+        {/* ═══════════════════════════════════════════════════════════ */}
+        <div className="card-clean rounded-xl">
+          <div className="flex items-center justify-between p-5 border-b border-border">
+            <div>
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-primary" />
+                Daily Work Submissions
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                All daily logs submitted by your assigned students — review and grade directly here
+              </p>
+            </div>
+            <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full">
+              {pendingDailyReports.length} Pending Review
+            </span>
+          </div>
+
+          <div className="p-4 sm:p-5">
+            {supervisorDailyReports.length === 0 ? (
+              <div className="text-center py-10 text-muted-foreground text-sm">
+                <ClipboardList className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                No daily reports submitted by your students yet
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {supervisorDailyReports.slice(0, 20).map(dr => {
+                  const student = assignedStudents.find(st => st.id === dr.studentId);
+                  return (
+                    <div key={dr.id}
+                      className="bg-secondary/40 border border-border rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-secondary/70 transition-colors"
+                    >
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg stat-card-blue flex items-center justify-center text-white font-bold text-xs shrink-0">
+                            {(student?.name || dr.studentName).charAt(0)}
+                          </div>
+                          <span className="font-bold text-sm text-foreground">{student?.name || dr.studentName}</span>
+                          <span className="text-muted-foreground text-xs">•</span>
+                          <span className="text-xs text-muted-foreground">{dr.dayOfWeek}, {dr.date}</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20">
+                            Week {dr.weekNumber} • {dr.hoursWorked} hrs
+                          </span>
+                          {dr.status === 'graded' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3" /> Graded: {dr.grade}/100
+                            </span>
+                          ) : dr.status === 'reviewed' ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                              <Clock className="w-3 h-3" /> Reviewed
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-200">
+                              <Clock className="w-3 h-3" /> Pending Review
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs font-bold text-foreground pl-9">{dr.title}</p>
+                        <p className="text-xs text-muted-foreground pl-9 line-clamp-2">{dr.tasksCompleted}</p>
+                        {dr.feedback && (
+                          <p className="text-xs text-blue-800 dark:text-blue-300 italic bg-blue-50 dark:bg-blue-950/20 px-3 py-1.5 rounded-lg ml-9">
+                            <MessageSquare className="w-3 h-3 inline mr-1" />"{dr.feedback}"
+                          </p>
+                        )}
+                      </div>
+                      <div className="shrink-0">
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setSelectedDailyForReview(dr);
+                            setDailyReviewFeedback(dr.feedback || '');
+                            setDailyReviewGrade(dr.grade ? String(dr.grade) : '85');
+                            setIsDailyReviewModalOpen(true);
+                          }}
+                          className="btn-primary gap-1.5 text-xs rounded-lg"
+                        >
+                          <Star className="w-3.5 h-3.5" />
+                          {dr.grade !== undefined ? 'Edit Grade' : 'Review & Grade'}
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {supervisorDailyReports.length > 20 && (
+                  <p className="text-xs text-center text-muted-foreground pt-1">
+                    Showing latest 20 of {supervisorDailyReports.length} total daily submissions. Use student cards below to inspect older logs.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="card-clean rounded-xl">
           <div className="flex items-center justify-between p-5 border-b border-border">
             <div>

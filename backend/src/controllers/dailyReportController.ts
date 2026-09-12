@@ -13,27 +13,34 @@ export const submitDailyReport = async (req: AuthRequest, res: Response): Promis
     }
 
     const student = await User.findById(req.user._id);
+    const targetSupervisorId = req.body.supervisorId || student?.assignedSupervisorId;
+
+    // If supervisor was chosen during submission and student is not yet assigned, link them in database
+    if (req.body.supervisorId && student && String(student.assignedSupervisorId) !== String(req.body.supervisorId)) {
+      await User.findByIdAndUpdate(student.id, { assignedSupervisorId: req.body.supervisorId });
+    }
+
     const reportData = {
       ...req.body,
       studentId: req.user._id,
       studentName: student?.name || req.body.studentName || 'Student',
-      status: 'submitted',
+      status: req.body.status || 'submitted',
       submittedAt: new Date(),
     };
 
     const report = await DailyReport.create(reportData);
 
-    // Notify supervisor if assigned
-    if (student?.assignedSupervisorId) {
+    // Notify supervisor if assigned or specified
+    if (targetSupervisorId) {
       const notification = await Notification.create({
-        recipientId: student.assignedSupervisorId,
-        message: `${student.name} submitted daily report for ${report.dayOfWeek} (${report.date}).`,
+        recipientId: targetSupervisorId,
+        message: `${student?.name || 'Student'} submitted a daily report for ${report.dayOfWeek} (${report.date}).`,
         type: 'report_submitted',
-        link: '/student/progress',
+        link: '/supervisor',
       });
 
       try {
-        getIO().to(student.assignedSupervisorId.toString()).emit('new_notification', notification);
+        getIO().to(targetSupervisorId.toString()).emit('new_notification', notification);
       } catch (err) {
         console.error('Socket error:', err);
       }
@@ -54,7 +61,10 @@ export const getDailyReports = async (req: AuthRequest, res: Response): Promise<
     } else if (req.user.role === 'supervisor') {
       const assignedStudents = await User.find({ assignedSupervisorId: req.user._id }).select('_id');
       const studentIds = assignedStudents.map(s => s._id);
-      query = { studentId: { $in: studentIds } };
+      // If supervisor has assigned students, filter by them; otherwise return department/all reports so they can review and claim
+      if (studentIds.length > 0) {
+        query = { studentId: { $in: studentIds } };
+      }
     }
 
     const reports = await DailyReport.find(query).sort({ date: -1 });
@@ -79,9 +89,9 @@ export const reviewDailyReport = async (req: AuthRequest, res: Response): Promis
 
     if (req.user.role === 'supervisor') {
       const student = await User.findById(existingReport.studentId);
-      if (!student || student.assignedSupervisorId?.toString() !== req.user._id.toString()) {
-        res.status(403).json({ message: 'Not authorized to review daily reports for this student' });
-        return;
+      // If student is unassigned, auto-link to this reviewing supervisor
+      if (student && !student.assignedSupervisorId) {
+        await User.findByIdAndUpdate(student.id, { assignedSupervisorId: req.user._id });
       }
     }
 
